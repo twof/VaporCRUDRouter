@@ -23,3 +23,4 @@ DELETE /todo/:id
 - query parameter support
 - PATCH support
 - more fine grained response statuses
+- embeded fields ex. `/user/1/todo` to get all `todo`s belonging to user with id 1

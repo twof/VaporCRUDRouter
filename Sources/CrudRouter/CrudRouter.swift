@@ -12,7 +12,10 @@ public protocol CrudControllerProtocol {
 
 public extension CrudControllerProtocol {
     func indexAll(_ req: Request) throws -> Future<[ModelType]> {
-        return ModelType.query(on: req).all().map { Array($0) }
+        return ModelType
+            .query(on: req)
+            .all()
+            .map { Array($0) }
     }
 
     func index(_ req: Request) throws -> Future<ModelType> {
@@ -21,18 +24,23 @@ public extension CrudControllerProtocol {
     }
 
     func create(_ req: Request) throws -> Future<ModelType> {
-        return try req.content.decode(ModelType.self).flatMap { model in
-            return model.save(on: req)
-        }
+        return try req
+            .content
+            .decode(ModelType.self)
+            .flatMap { model in
+                return model.save(on: req)
+            }
     }
 
     func update(_ req: Request) throws -> Future<ModelType> {
         let id: ModelType.ID = try getId(from: req)
-        return try req.content.decode(ModelType.self).flatMap { model in
-            var temp = model
-            temp.fluentID = id
-            return temp.update(on: req)
-        }
+        return try req
+            .content.decode(ModelType.self)
+            .flatMap { model in
+                var temp = model
+                temp.fluentID = id
+                return temp.update(on: req)
+            }
     }
 
     func delete(_ req: Request) throws -> Future<HTTPStatus> {
@@ -42,7 +50,7 @@ public extension CrudControllerProtocol {
             .unwrap(or: Abort(.notFound))
             .flatMap { model in
                 return model.delete(on: req).transform(to: HTTPStatus.ok)
-        }
+            }
     }
 }
 
@@ -62,7 +70,7 @@ public extension Router {
     func crudRegister<ModelType: Model & Content>(
         _ path: PathComponentsRepresentable...,
         for type: ModelType.Type
-        ) where ModelType.ID: Parameter {
+    ) where ModelType.ID: Parameter {
         let controller = CrudController<ModelType>()
 
         self.get(path, CrudController<ModelType>.ModelType.ID.parameter, use: controller.index)
