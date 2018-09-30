@@ -2,6 +2,22 @@
 
 CrudRouter makes it as simple as possible to set up CRUD (Create, Read, Update, Delete) routes for any `Model`.
 
+## Installation
+Within your Package.swift
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/twof/VaporCRUDRouter.git", from: "1.0.0")
+]
+```
+and
+
+```swift
+targets: [
+    .target(name: "App", dependencies: ["CrudRouter"]),
+]
+```
+
 ## Usage
 Within your router setup (`routes.swift` in the default Vapor API template)
 ```swift

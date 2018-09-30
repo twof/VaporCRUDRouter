@@ -82,7 +82,7 @@ public extension Router {
     func crudRegister<ModelType: Model & Content>(
         _ path: PathComponentsRepresentable...,
         for type: ModelType.Type
-        ) where ModelType.ID: Parameter {
+    ) where ModelType.ID: Parameter {
         let controller = CrudController<ModelType>()
 
         let path
