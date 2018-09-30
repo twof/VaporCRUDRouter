@@ -64,19 +64,41 @@ fileprivate extension CrudControllerProtocol {
 
 fileprivate final class CrudController<T: Model>: CrudControllerProtocol where T.ID: Parameter, T: Content {
     typealias ModelType = T
+
+    
 }
+extension String {
+    func snakeCased() -> String? {
+        let pattern = "([a-z0-9])([A-Z])"
+
+        let regex = try? NSRegularExpression(pattern: pattern, options: [])
+        let range = NSRange(location: 0, length: self.count)
+        return regex?.stringByReplacingMatches(in: self, options: [], range: range, withTemplate: "$1_$2").lowercased()
+    }
+}
+
 
 public extension Router {
     func crudRegister<ModelType: Model & Content>(
         _ path: PathComponentsRepresentable...,
         for type: ModelType.Type
-    ) where ModelType.ID: Parameter {
+        ) where ModelType.ID: Parameter {
         let controller = CrudController<ModelType>()
 
-        self.get(path, CrudController<ModelType>.ModelType.ID.parameter, use: controller.index)
+        let path
+            = path.count == 0
+                ? [String(describing: ModelType.self).snakeCased()! as PathComponentsRepresentable]
+                : path
+
+        self.get(path, ModelType.ID.parameter, use: controller.index)
         self.get(path, use: controller.indexAll)
         self.post(path, use: controller.create)
-        self.put(path, CrudController<ModelType>.ModelType.ID.parameter, use: controller.update)
-        self.delete(path, CrudController<ModelType>.ModelType.ID.parameter, use: controller.delete)
+        self.put(path, ModelType.ID.parameter, use: controller.update)
+        self.delete(path, ModelType.ID.parameter, use: controller.delete)
     }
+
+    // notes:
+    // we want to register other models
+    // if something like /todo/1/user comes in, it ought to be translated to
+    // /todo?userid=1
 }
