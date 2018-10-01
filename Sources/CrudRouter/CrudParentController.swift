@@ -26,8 +26,11 @@ public extension CrudParentControllerProtocol {
     func update(_ req: Request) throws -> Future<ParentType> {
         let childId: ChildType.ID = try getId(from: req)
 
-        return ChildType.find(childId, on: req).unwrap(or: Abort(.notFound)).flatMap { child in
-            return child[keyPath: self.relation].get(on: req)
+        return ChildType
+            .find(childId, on: req)
+            .unwrap(or: Abort(.notFound))
+            .flatMap { child in
+                return child[keyPath: self.relation].get(on: req)
             }.flatMap { oldParent in
                 return try req.content.decode(ParentType.self).flatMap { newParent in
                     var temp = newParent
@@ -70,9 +73,8 @@ extension CrudParentController: RouteCollection {
                 : self.path
 
         let parentPath = self.basePath.appending(parentString)
-        let parentIdPath = self.basePath.appending(parentString).appending(ParentType.ID.parameter)
 
         router.get(parentPath, use: self.index)
-        router.put(parentIdPath, use: self.update)
+        router.put(parentPath, use: self.update)
     }
 }
