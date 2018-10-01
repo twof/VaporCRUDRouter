@@ -134,7 +134,27 @@ public struct CrudSiblingsController<ChildT: Model & Content, ParentT: Model & C
     }
 }
 
-extension CrudSiblingsController: RouteCollection {
+extension CrudSiblingsController: RouteCollection {}
+
+extension CrudSiblingsController where ThroughT: ModifiablePivot {
+    public func boot(router: Router) throws {
+        let parentString
+            = self.path.count == 0
+                ? [String(describing: ParentType.self).snakeCased()! as PathComponentsRepresentable]
+                : self.path
+
+        let parentPath = self.basePath.appending(parentString)
+        let parentIdPath = self.basePath.appending(parentString).appending(ParentType.ID.parameter)
+
+        router.get(parentIdPath, use: self.index)
+        router.get(parentPath, use: self.indexAll)
+        router.post(parentPath, use: self.create)
+        router.put(parentIdPath, use: self.update)
+        router.delete(parentIdPath, use: self.delete)
+    }
+}
+
+extension CrudSiblingsController {
     public func boot(router: Router) throws {
 
         let parentString
@@ -147,9 +167,8 @@ extension CrudSiblingsController: RouteCollection {
 
         router.get(parentIdPath, use: self.index)
         router.get(parentPath, use: self.indexAll)
-//        router.post(parentPath, use: self.create)
         router.put(parentIdPath, use: self.update)
-//        router.delete(parentIdPath, use: self.delete)
     }
 }
+
 

@@ -105,7 +105,7 @@ public struct CrudController<ModelT: Model & Content>: CrudControllerProtocol wh
         ChildType.ID: Parameter,
         ThroughType: Pivot,
         ThroughType.Database: JoinSupporting,
-        ThroughType.Database == ChildType.Database{
+        ThroughType.Database == ChildType.Database {
             let baseIdPath = self.path.appending(ModelType.ID.parameter)
 
             return CrudSiblingsController(siblingRelation: relation, basePath: baseIdPath, path: path)
