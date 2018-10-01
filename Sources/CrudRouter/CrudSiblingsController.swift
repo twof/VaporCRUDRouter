@@ -4,7 +4,7 @@ import Fluent
 public protocol CrudSiblingsControllerProtocol {
     associatedtype ParentType: Model & Content where ParentType.ID: Parameter
     associatedtype ChildType: Model & Content where ChildType.ID: Parameter, ChildType.Database == ParentType.Database
-    associatedtype ThroughType: Pivot where ThroughType.Database: JoinSupporting, ChildType.Database == ThroughType.Database
+    associatedtype ThroughType: ModifiablePivot where ThroughType.Database: JoinSupporting, ChildType.Database == ThroughType.Database
 
     var siblings: KeyPath<ParentType, Siblings<ParentType, ChildType, ThroughType>> { get }
 
@@ -12,9 +12,9 @@ public protocol CrudSiblingsControllerProtocol {
 
     func index(_ req: Request) throws -> Future<ChildType>
     func indexAll(_ req: Request) throws -> Future<[ChildType]>
-//    func create(_ req: Request) throws -> Future<ChildType>
+    func create(_ req: Request) throws -> Future<ChildType>
     func update(_ req: Request) throws -> Future<ChildType>
-//    func delete(_ req: Request) throws -> Future<HTTPStatus>
+    func delete(_ req: Request) throws -> Future<HTTPStatus>
 }
 
 public extension CrudSiblingsControllerProtocol {
@@ -43,6 +43,17 @@ public extension CrudSiblingsControllerProtocol {
         }
     }
 
+    func create(_ req: Request) throws -> Future<ChildType> {
+        let parentId: ParentType.ID = try getId(from: req)
+
+        return ParentType.find(parentId, on: req).unwrap(or: Abort(.notFound)).flatMap { parent -> Future<ChildType> in
+
+            return try req.content.decode(ChildType.self).flatMap { child in
+                return try parent[keyPath: self.siblings].query(on: req).save(child)
+            }
+        }
+    }
+
     func update(_ req: Request) throws -> Future<ChildType> {
         let parentId: ParentType.ID = try getId(from: req)
         let childId: ChildType.ID = try getId(from: req)
@@ -62,21 +73,6 @@ public extension CrudSiblingsControllerProtocol {
                     temp.fluentID = oldChild.fluentID
                     return temp.update(on: req)
                 }
-        }
-    }
-
-
-}
-
-extension CrudSiblingsControllerProtocol where ThroughType: ModifiablePivot {
-    func create(_ req: Request) throws -> Future<ChildType> {
-        let parentId: ParentType.ID = try getId(from: req)
-
-        return ParentType.find(parentId, on: req).unwrap(or: Abort(.notFound)).flatMap { parent -> Future<ChildType> in
-
-            return try req.content.decode(ChildType.self).flatMap { child in
-                return try parent[keyPath: self.siblings].query(on: req).save(child)
-            }
         }
     }
 
@@ -108,7 +104,7 @@ fileprivate extension CrudSiblingsControllerProtocol {
     }
 }
 
-public struct CrudSiblingsController<ChildT: Model & Content, ParentT: Model & Content, ThroughT: Pivot>: CrudSiblingsControllerProtocol where
+public struct CrudSiblingsController<ChildT: Model & Content, ParentT: Model & Content, ThroughT: ModifiablePivot>: CrudSiblingsControllerProtocol where
         ChildT.ID: Parameter,
         ParentT.ID: Parameter,
         ChildT.Database == ParentT.Database,
@@ -136,7 +132,7 @@ public struct CrudSiblingsController<ChildT: Model & Content, ParentT: Model & C
 
 extension CrudSiblingsController: RouteCollection {}
 
-public extension CrudSiblingsController where ThroughT: ModifiablePivot {
+public extension CrudSiblingsController {
     public func boot(router: Router) throws {
         let parentString
             = self.path.count == 0
@@ -153,22 +149,3 @@ public extension CrudSiblingsController where ThroughT: ModifiablePivot {
         router.delete(parentIdPath, use: self.delete)
     }
 }
-
-public extension CrudSiblingsController {
-    public func boot(router: Router) throws {
-
-        let parentString
-            = self.path.count == 0
-                ? [String(describing: ParentType.self).snakeCased()! as PathComponentsRepresentable]
-                : self.path
-
-        let parentPath = self.basePath.appending(parentString)
-        let parentIdPath = self.basePath.appending(parentString).appending(ParentType.ID.parameter)
-
-        router.get(parentIdPath, use: self.index)
-        router.get(parentPath, use: self.indexAll)
-        router.put(parentIdPath, use: self.update)
-    }
-}
-
-
