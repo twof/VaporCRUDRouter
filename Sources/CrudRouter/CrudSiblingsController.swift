@@ -2,13 +2,11 @@ import Vapor
 import Fluent
 
 public protocol CrudSiblingsControllerProtocol {
-    associatedtype ParentType: Content where ParentType.ID: Parameter
-    associatedtype ChildType: Content where ChildType.ID: Parameter, ChildType.Database == ParentType.Database
+    associatedtype ParentType: Model & Content where ParentType.ID: Parameter
+    associatedtype ChildType: Model & Content where ChildType.ID: Parameter, ChildType.Database == ParentType.Database
     associatedtype ThroughType: ModifiablePivot where
         ThroughType.Database: JoinSupporting,
-        ChildType.Database == ThroughType.Database,
-        ThroughType.Left == ParentType,
-        ThroughType.Right == ChildType
+        ChildType.Database == ThroughType.Database
 
     var siblings: KeyPath<ParentType, Siblings<ParentType, ChildType, ThroughType>> { get }
 
@@ -47,18 +45,6 @@ public extension CrudSiblingsControllerProtocol {
         }
     }
 
-    func create(_ req: Request) throws -> Future<ChildType> {
-        let parentId: ParentType.ID = try getId(from: req)
-
-        return ParentType.find(parentId, on: req).unwrap(or: Abort(.notFound)).flatMap { parent -> Future<ChildType> in
-
-            return try req.content.decode(ChildType.self).flatMap { child in
-                let relation = parent[keyPath: self.siblings]
-                return relation.attach(child, on: req).transform(to: child)
-            }
-        }
-    }
-
     func update(_ req: Request) throws -> Future<ChildType> {
         let parentId: ParentType.ID = try getId(from: req)
         let childId: ChildType.ID = try getId(from: req)
@@ -78,6 +64,55 @@ public extension CrudSiblingsControllerProtocol {
                     temp.fluentID = oldChild.fluentID
                     return temp.update(on: req)
                 }
+        }
+    }
+}
+
+public extension CrudSiblingsControllerProtocol where ThroughType.Left == ParentType,
+ThroughType.Right == ChildType {
+    func create(_ req: Request) throws -> Future<ChildType> {
+        let parentId: ParentType.ID = try getId(from: req)
+
+        return ParentType.find(parentId, on: req).unwrap(or: Abort(.notFound)).flatMap { parent -> Future<ChildType> in
+
+            return try req.content.decode(ChildType.self).flatMap { child in
+                let relation = parent[keyPath: self.siblings]
+                return relation.attach(child, on: req).transform(to: child)
+            }
+        }
+    }
+
+    func delete(_ req: Request) throws -> Future<HTTPStatus> {
+        let parentId: ParentType.ID = try getId(from: req)
+        let childId: ChildType.ID = try getId(from: req)
+
+        return ParentType
+            .find(parentId, on: req)
+            .unwrap(or: Abort(.notFound))
+            .flatMap { parent -> Future<HTTPStatus> in
+                let siblingsRelation = parent[keyPath: self.siblings]
+                return try siblingsRelation
+                    .query(on: req)
+                    .filter(\ChildType.fluentID == childId)
+                    .first()
+                    .unwrap(or: Abort(.notFound))
+                    .delete(on: req)
+                    .transform(to: HTTPStatus.ok)
+        }
+    }
+}
+
+public extension CrudSiblingsControllerProtocol where ThroughType.Right == ParentType,
+ThroughType.Left == ChildType {
+    func create(_ req: Request) throws -> Future<ChildType> {
+        let parentId: ParentType.ID = try getId(from: req)
+
+        return ParentType.find(parentId, on: req).unwrap(or: Abort(.notFound)).flatMap { parent -> Future<ChildType> in
+
+            return try req.content.decode(ChildType.self).flatMap { child in
+                let relation = parent[keyPath: self.siblings]
+                return relation.attach(child, on: req).transform(to: child)
+            }
         }
     }
 
