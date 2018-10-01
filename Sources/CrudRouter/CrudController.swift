@@ -100,7 +100,7 @@ public struct CrudController<ModelT: Model & Content>: CrudControllerProtocol wh
         forSiblings relation: KeyPath<ModelType, Siblings<ModelType, ChildType, ThroughType>>,
         at path: [PathComponentsRepresentable]
     ) -> CrudSiblingsController<ChildType, ModelType, ThroughType> where
-        ChildType: Model & Content,
+        ChildType: Content,
         ModelType.Database == ChildType.Database,
         ChildType.ID: Parameter,
         ThroughType: Pivot,

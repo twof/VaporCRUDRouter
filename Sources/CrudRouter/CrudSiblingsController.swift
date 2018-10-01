@@ -2,9 +2,13 @@ import Vapor
 import Fluent
 
 public protocol CrudSiblingsControllerProtocol {
-    associatedtype ParentType: Model & Content where ParentType.ID: Parameter
-    associatedtype ChildType: Model & Content where ChildType.ID: Parameter, ChildType.Database == ParentType.Database
-    associatedtype ThroughType: ModifiablePivot where ThroughType.Database: JoinSupporting, ChildType.Database == ThroughType.Database
+    associatedtype ParentType: Content where ParentType.ID: Parameter
+    associatedtype ChildType: Content where ChildType.ID: Parameter, ChildType.Database == ParentType.Database
+    associatedtype ThroughType: ModifiablePivot where
+        ThroughType.Database: JoinSupporting,
+        ChildType.Database == ThroughType.Database,
+        ThroughType.Left == ParentType,
+        ThroughType.Right == ChildType
 
     var siblings: KeyPath<ParentType, Siblings<ParentType, ChildType, ThroughType>> { get }
 
@@ -49,7 +53,8 @@ public extension CrudSiblingsControllerProtocol {
         return ParentType.find(parentId, on: req).unwrap(or: Abort(.notFound)).flatMap { parent -> Future<ChildType> in
 
             return try req.content.decode(ChildType.self).flatMap { child in
-                return try parent[keyPath: self.siblings].query(on: req).save(child)
+                let relation = parent[keyPath: self.siblings]
+                return relation.attach(child, on: req).transform(to: child)
             }
         }
     }
@@ -104,12 +109,14 @@ fileprivate extension CrudSiblingsControllerProtocol {
     }
 }
 
-public struct CrudSiblingsController<ChildT: Model & Content, ParentT: Model & Content, ThroughT: ModifiablePivot>: CrudSiblingsControllerProtocol where
+public struct CrudSiblingsController<ChildT: Content, ParentT: Content, ThroughT: ModifiablePivot>: CrudSiblingsControllerProtocol where
         ChildT.ID: Parameter,
         ParentT.ID: Parameter,
         ChildT.Database == ParentT.Database,
         ThroughT.Database: JoinSupporting,
-        ThroughT.Database == ChildT.Database {
+        ThroughT.Database == ChildT.Database,
+        ThroughT.Left == ParentT,
+        ThroughT.Right == ChildT {
 
     public typealias ThroughType = ThroughT
     public typealias ParentType = ParentT
