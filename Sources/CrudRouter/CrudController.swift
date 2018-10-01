@@ -75,8 +75,8 @@ public struct CrudController<ModelT: Model & Content>: CrudControllerProtocol wh
     /// - Parameter relation: Keypath from origin model to a Parent relation, which goes from origin model to
     /// - Returns: relation controller, which retrieves models in relation to ModelType
     public func crudRouterCollection<ParentType>(
-        forParent relation: KeyPath<ModelType, Parent<ModelType, ParentType>>,
-        at path: [PathComponentsRepresentable]
+        at path: PathComponentsRepresentable...,
+        forParent relation: KeyPath<ModelType, Parent<ModelType, ParentType>>
     ) -> CrudParentController<ModelType, ParentType> where
         ParentType: Model & Content,
         ModelType.Database == ParentType.Database,
@@ -87,8 +87,8 @@ public struct CrudController<ModelT: Model & Content>: CrudControllerProtocol wh
     }
 
     public func crudRouterCollection<ChildType>(
-        forChildren relation: KeyPath<ModelType, Children<ModelType, ChildType>>,
-        at path: [PathComponentsRepresentable]
+        at path: PathComponentsRepresentable...,
+        forChildren relation: KeyPath<ModelType, Children<ModelType, ChildType>>
     ) -> CrudChildrenController<ChildType, ModelType> where
         ChildType: Model & Content,
         ModelType.Database == ChildType.Database,
@@ -99,8 +99,8 @@ public struct CrudController<ModelT: Model & Content>: CrudControllerProtocol wh
     }
 
     public func crudRegister<ParentType>(
+        at path: PathComponentsRepresentable...,
         forParent relation: KeyPath<ModelType, Parent<ModelType, ParentType>>,
-        at path: [PathComponentsRepresentable],
         relationConfiguration: ((CrudParentController<ModelType, ParentType>) throws -> Void)?=nil
     ) throws where
         ParentType: Model & Content,
@@ -114,8 +114,8 @@ public struct CrudController<ModelT: Model & Content>: CrudControllerProtocol wh
     }
 
     public func crudRegister<ChildType>(
+        at path: PathComponentsRepresentable...,
         forChildren relation: KeyPath<ModelType, Children<ModelType, ChildType>>,
-        at path: [PathComponentsRepresentable],
         relationConfiguration: ((CrudChildrenController<ChildType, ModelType>) throws -> Void)?=nil
     ) throws where
         ChildType: Model & Content,
