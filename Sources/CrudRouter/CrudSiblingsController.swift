@@ -14,9 +14,9 @@ public protocol CrudSiblingsControllerProtocol {
 
     func index(_ req: Request) throws -> Future<ChildType>
     func indexAll(_ req: Request) throws -> Future<[ChildType]>
-    func create(_ req: Request) throws -> Future<ChildType>
+//    func create(_ req: Request) throws -> Future<ChildType>
     func update(_ req: Request) throws -> Future<ChildType>
-    func delete(_ req: Request) throws -> Future<HTTPStatus>
+//    func delete(_ req: Request) throws -> Future<HTTPStatus>
 }
 
 public extension CrudSiblingsControllerProtocol {
@@ -144,14 +144,12 @@ fileprivate extension CrudSiblingsControllerProtocol {
     }
 }
 
-public struct CrudSiblingsController<ChildT: Content, ParentT: Content, ThroughT: ModifiablePivot>: CrudSiblingsControllerProtocol where
+public struct CrudSiblingsController<ChildT: Model & Content, ParentT: Model & Content, ThroughT: ModifiablePivot>: CrudSiblingsControllerProtocol where
         ChildT.ID: Parameter,
         ParentT.ID: Parameter,
         ChildT.Database == ParentT.Database,
         ThroughT.Database: JoinSupporting,
-        ThroughT.Database == ChildT.Database,
-        ThroughT.Left == ParentT,
-        ThroughT.Right == ChildT {
+        ThroughT.Database == ChildT.Database {
 
     public typealias ThroughType = ThroughT
     public typealias ParentType = ParentT
@@ -174,7 +172,8 @@ public struct CrudSiblingsController<ChildT: Content, ParentT: Content, ThroughT
 
 extension CrudSiblingsController: RouteCollection {}
 
-public extension CrudSiblingsController {
+public extension CrudSiblingsController where ThroughType.Right == ParentType,
+ThroughType.Left == ChildType {
     public func boot(router: Router) throws {
         let parentString
             = self.path.count == 0
@@ -189,5 +188,40 @@ public extension CrudSiblingsController {
         router.post(parentPath, use: self.create)
         router.put(parentIdPath, use: self.update)
         router.delete(parentIdPath, use: self.delete)
+    }
+}
+
+public extension CrudSiblingsController where ThroughType.Left == ParentType,
+ThroughType.Right == ChildType {
+    public func boot(router: Router) throws {
+        let parentString
+            = self.path.count == 0
+                ? [String(describing: ParentType.self).snakeCased()! as PathComponentsRepresentable]
+                : self.path
+
+        let parentPath = self.basePath.appending(parentString)
+        let parentIdPath = self.basePath.appending(parentString).appending(ParentType.ID.parameter)
+
+        router.get(parentIdPath, use: self.index)
+        router.get(parentPath, use: self.indexAll)
+        router.post(parentPath, use: self.create)
+        router.put(parentIdPath, use: self.update)
+        router.delete(parentIdPath, use: self.delete)
+    }
+}
+
+public extension CrudSiblingsController {
+    public func boot(router: Router) throws {
+        let parentString
+            = self.path.count == 0
+                ? [String(describing: ParentType.self).snakeCased()! as PathComponentsRepresentable]
+                : self.path
+
+        let parentPath = self.basePath.appending(parentString)
+        let parentIdPath = self.basePath.appending(parentString).appending(ParentType.ID.parameter)
+
+        router.get(parentIdPath, use: self.index)
+        router.get(parentPath, use: self.indexAll)
+        router.put(parentIdPath, use: self.update)
     }
 }
