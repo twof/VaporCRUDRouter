@@ -72,13 +72,28 @@ public struct CrudController<ModelT: Model & Content>: CrudControllerProtocol wh
     ///
     /// - Parameter relation: Keypath from origin model to a Parent relation, which goes from origin model to
     /// - Returns: relation controller, which retrieves models in relation to ModelType
-    public func crudRouterCollection<ParentType>(forParent relation: KeyPath<ModelType, Parent<ModelType, ParentType>>, at path: [PathComponentsRepresentable]) -> CrudParentController<ModelType, ParentType> where
+    public func crudRouterCollection<ParentType>(
+        forParent relation: KeyPath<ModelType, Parent<ModelType, ParentType>>,
+        at path: [PathComponentsRepresentable]
+    ) -> CrudParentController<ModelType, ParentType> where
         ParentType: Model & Content,
         ModelType.Database == ParentType.Database,
         ParentType.ID: Parameter {
             let baseIdPath = self.path.appending(ModelType.ID.parameter)
 
             return CrudParentController(relation: relation, basePath: baseIdPath, path: path)
+    }
+
+    public func crudRouterCollection<ChildType>(
+        forChildren relation: KeyPath<ModelType, Children<ModelType, ChildType>>,
+        at path: [PathComponentsRepresentable]
+    ) -> CrudChildrenController<ChildType, ModelType> where
+        ChildType: Model & Content,
+        ModelType.Database == ChildType.Database,
+        ChildType.ID: Parameter {
+            let baseIdPath = self.path.appending(ModelType.ID.parameter)
+
+            return CrudChildrenController(childrenRelation: relation, basePath: baseIdPath, path: path)
     }
 }
 

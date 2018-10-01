@@ -31,13 +31,7 @@ public extension CrudParentControllerProtocol {
             .unwrap(or: Abort(.notFound))
             .flatMap { child in
                 return child[keyPath: self.relation].get(on: req)
-            }.flatMap { oldParent in
-                return try req.content.decode(ParentType.self).flatMap { newParent in
-                    var temp = newParent
-                    temp.fluentID = oldParent.fluentID
-                    return temp.update(on: req)
-                }
-        }
+            } 
     }
 }
 
