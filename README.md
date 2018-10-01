@@ -66,8 +66,18 @@ PUT /account/:id
 DELETE /account/:id
 ```
 
+#### Nested Relations
+Say you had a model `User`, which was the parent of another model `Todo`. If you'd like routes to expose all `Todo`s that belong to a specific `User`, you can do something like this.
+
+```swift
+try router.crudRegister(for: User.self) { controller in
+    try controller.crudRegister(forChildren: \.todos)
+}
+```
+
+within the supplied closure, you can also expose routes for related `Parent`s and `Sibling`s
+
 ### Future features
 - query parameter support
 - PATCH support
 - more fine grained response statuses
-- embeded fields ex. `/user/1/todo` to get all `todo`s belonging to user with id 1
