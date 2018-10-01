@@ -101,7 +101,7 @@ public struct CrudController<ModelT: Model & Content>: CrudControllerProtocol wh
         at path: [PathComponentsRepresentable]
     ) -> CrudSiblingsController<ChildType, ModelType, ThroughType> where
         ChildType: Content,
-        ModelType.Database == ChildType.Database,
+        ModelType.Database == ThroughType.Database,
         ChildType.ID: Parameter,
         ThroughType: Pivot,
         ThroughType.Database: JoinSupporting,
