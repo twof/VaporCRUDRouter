@@ -136,7 +136,7 @@ public struct CrudSiblingsController<ChildT: Model & Content, ParentT: Model & C
 
 extension CrudSiblingsController: RouteCollection {}
 
-extension CrudSiblingsController where ThroughT: ModifiablePivot {
+public extension CrudSiblingsController where ThroughT: ModifiablePivot {
     public func boot(router: Router) throws {
         let parentString
             = self.path.count == 0
@@ -154,7 +154,7 @@ extension CrudSiblingsController where ThroughT: ModifiablePivot {
     }
 }
 
-extension CrudSiblingsController {
+public extension CrudSiblingsController {
     public func boot(router: Router) throws {
 
         let parentString
