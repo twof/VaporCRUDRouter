@@ -90,7 +90,7 @@ public extension CrudChildrenControllerProtocol {
                     .unwrap(or: Abort(.notFound))
                     .delete(on: req)
                     .transform(to: HTTPStatus.ok)
-            }
+        }
     }
 }
 
@@ -111,6 +111,11 @@ public struct CrudChildrenController<ChildT: Model & Content, ParentT: Model & C
     let path: [PathComponentsRepresentable]
 
     public init(childrenRelation: KeyPath<ParentT, Children<ParentT, ChildT>>, basePath: [PathComponentsRepresentable], path: [PathComponentsRepresentable]) {
+        let path
+            = path.count == 0
+                ? [String(describing: ChildType.self).snakeCased()! as PathComponentsRepresentable]
+                : path
+
         self.children = childrenRelation
         self.basePath = basePath
         self.path = path

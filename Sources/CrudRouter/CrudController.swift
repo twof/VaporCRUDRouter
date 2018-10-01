@@ -77,7 +77,7 @@ public struct CrudController<ModelT: Model & Content>: CrudControllerProtocol wh
     public func crudRouterCollection<ParentType>(
         at path: PathComponentsRepresentable...,
         forParent relation: KeyPath<ModelType, Parent<ModelType, ParentType>>
-    ) -> CrudParentController<ModelType, ParentType> where
+        ) -> CrudParentController<ModelType, ParentType> where
         ParentType: Model & Content,
         ModelType.Database == ParentType.Database,
         ParentType.ID: Parameter {
@@ -89,7 +89,7 @@ public struct CrudController<ModelT: Model & Content>: CrudControllerProtocol wh
     public func crudRouterCollection<ChildType>(
         at path: PathComponentsRepresentable...,
         forChildren relation: KeyPath<ModelType, Children<ModelType, ChildType>>
-    ) -> CrudChildrenController<ChildType, ModelType> where
+        ) -> CrudChildrenController<ChildType, ModelType> where
         ChildType: Model & Content,
         ModelType.Database == ChildType.Database,
         ChildType.ID: Parameter {
@@ -102,7 +102,7 @@ public struct CrudController<ModelT: Model & Content>: CrudControllerProtocol wh
         at path: PathComponentsRepresentable...,
         forParent relation: KeyPath<ModelType, Parent<ModelType, ParentType>>,
         relationConfiguration: ((CrudParentController<ModelType, ParentType>) throws -> Void)?=nil
-    ) throws where
+        ) throws where
         ParentType: Model & Content,
         ModelType.Database == ParentType.Database,
         ParentType.ID: Parameter {
@@ -117,7 +117,7 @@ public struct CrudController<ModelT: Model & Content>: CrudControllerProtocol wh
         at path: PathComponentsRepresentable...,
         forChildren relation: KeyPath<ModelType, Children<ModelType, ChildType>>,
         relationConfiguration: ((CrudChildrenController<ChildType, ModelType>) throws -> Void)?=nil
-    ) throws where
+        ) throws where
         ChildType: Model & Content,
         ModelType.Database == ChildType.Database,
         ChildType.ID: Parameter {
@@ -128,20 +128,20 @@ public struct CrudController<ModelT: Model & Content>: CrudControllerProtocol wh
             try controller.boot(router: self.router)
     }
 
-//    public func crudRouterCollection<ChildType, ThroughType>(
-//        forSiblings relation: KeyPath<ModelType, Siblings<ModelType, ChildType, ThroughType>>,
-//        at path: [PathComponentsRepresentable]
-//    ) -> CrudSiblingsController<ChildType, ModelType, ThroughType> where
-//        ChildType: Content,
-//        ModelType.Database == ThroughType.Database,
-//        ChildType.ID: Parameter,
-//        ThroughType: ModifiablePivot,
-//        ThroughType.Database: JoinSupporting,
-//        ThroughType.Database == ChildType.Database {
-//            let baseIdPath = self.path.appending(ModelType.ID.parameter)
-//
-//            return CrudSiblingsController(siblingRelation: relation, basePath: baseIdPath, path: path)
-//    }
+    //    public func crudRouterCollection<ChildType, ThroughType>(
+    //        forSiblings relation: KeyPath<ModelType, Siblings<ModelType, ChildType, ThroughType>>,
+    //        at path: [PathComponentsRepresentable]
+    //    ) -> CrudSiblingsController<ChildType, ModelType, ThroughType> where
+    //        ChildType: Content,
+    //        ModelType.Database == ThroughType.Database,
+    //        ChildType.ID: Parameter,
+    //        ThroughType: ModifiablePivot,
+    //        ThroughType.Database: JoinSupporting,
+    //        ThroughType.Database == ChildType.Database {
+    //            let baseIdPath = self.path.appending(ModelType.ID.parameter)
+    //
+    //            return CrudSiblingsController(siblingRelation: relation, basePath: baseIdPath, path: path)
+    //    }
 }
 
 extension CrudController: RouteCollection {

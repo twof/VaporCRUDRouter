@@ -31,7 +31,7 @@ public extension CrudParentControllerProtocol {
             .unwrap(or: Abort(.notFound))
             .flatMap { child in
                 return child[keyPath: self.relation].get(on: req)
-            } 
+        }
     }
 }
 
@@ -52,6 +52,11 @@ public struct CrudParentController<ChildT: Model & Content, ParentT: Model & Con
     let path: [PathComponentsRepresentable]
 
     public init(relation: KeyPath<ChildType, Parent<ChildType, ParentType>>, basePath: [PathComponentsRepresentable], path: [PathComponentsRepresentable]) {
+        let path
+            = path.count == 0
+                ? [String(describing: ParentType.self).snakeCased()! as PathComponentsRepresentable]
+                : path
+
         self.relation = relation
         self.basePath = basePath
         self.path = path
