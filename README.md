@@ -75,6 +75,22 @@ try router.crudRegister(for: User.self) { controller in
 }
 ```
 
+results in
+
+```
+GET /user
+GET /user/:id
+POST /user
+PUT /user/:id
+DELETE /user/:id
+
+GET/user/:id/todo
+GET /user/:id/todo/:id
+POST/user/:id/todo
+PUT/user/:id/todo/:id
+DELETE/user/:id/todo/:id
+```
+
 within the supplied closure, you can also expose routes for related `Parent`s and `Sibling`s
 
 ### Future features
