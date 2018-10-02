@@ -93,6 +93,12 @@ DELETE/user/:id/todo/:id
 
 within the supplied closure, you can also expose routes for related `Parent`s and `Sibling`s
 
+```swift
+try controller.crudRegister(forChildren: \.todos)
+try controller.crudRegister(forParent: \.todos)
+try controller.crudRegister(forSiblings: \.todos)
+```
+
 ### Future features
 - query parameter support
 - PATCH support
