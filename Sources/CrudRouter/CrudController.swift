@@ -81,7 +81,7 @@ extension CrudController {
     public func crudRouterCollection<ParentType>(
         at path: PathComponentsRepresentable...,
         forParent relation: KeyPath<ModelType, Parent<ModelType, ParentType>>
-        ) -> CrudParentController<ModelType, ParentType> where
+    ) -> CrudParentController<ModelType, ParentType> where
         ParentType: Model & Content,
         ModelType.Database == ParentType.Database,
         ParentType.ID: Parameter {
@@ -94,7 +94,7 @@ extension CrudController {
         at path: PathComponentsRepresentable...,
         forParent relation: KeyPath<ModelType, Parent<ModelType, ParentType>>,
         relationConfiguration: ((CrudParentController<ModelType, ParentType>) throws -> Void)?=nil
-        ) throws where
+    ) throws where
         ParentType: Model & Content,
         ModelType.Database == ParentType.Database,
         ParentType.ID: Parameter {

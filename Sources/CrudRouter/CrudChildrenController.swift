@@ -7,8 +7,6 @@ public protocol CrudChildrenControllerProtocol {
 
     var children: KeyPath<ParentType, Children<ParentType, ChildType>> { get }
 
-    init(childrenRelation: KeyPath<ParentType, Children<ParentType, ChildType>>, basePath: [PathComponentsRepresentable], path: [PathComponentsRepresentable])
-
     func index(_ req: Request) throws -> Future<ChildType>
     func indexAll(_ req: Request) throws -> Future<[ChildType]>
     func create(_ req: Request) throws -> Future<ChildType>
@@ -110,7 +108,7 @@ public struct CrudChildrenController<ChildT: Model & Content, ParentT: Model & C
     let basePath: [PathComponentsRepresentable]
     let path: [PathComponentsRepresentable]
 
-    public init(childrenRelation: KeyPath<ParentT, Children<ParentT, ChildT>>, basePath: [PathComponentsRepresentable], path: [PathComponentsRepresentable]) {
+    init(childrenRelation: KeyPath<ParentT, Children<ParentT, ChildT>>, basePath: [PathComponentsRepresentable], path: [PathComponentsRepresentable]) {
         let path
             = path.count == 0
                 ? [String(describing: ChildType.self).snakeCased()! as PathComponentsRepresentable]

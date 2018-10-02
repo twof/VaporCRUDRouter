@@ -9,9 +9,7 @@ public protocol CrudSiblingsControllerProtocol {
         ChildType.Database == ThroughType.Database
 
     var siblings: KeyPath<ParentType, Siblings<ParentType, ChildType, ThroughType>> { get }
-
-    init(siblingRelation: KeyPath<ParentType, Siblings<ParentType, ChildType, ThroughType>>, basePath: [PathComponentsRepresentable], path: [PathComponentsRepresentable])
-
+    
     func index(_ req: Request) throws -> Future<ChildType>
     func indexAll(_ req: Request) throws -> Future<[ChildType]>
     func update(_ req: Request) throws -> Future<ChildType>
@@ -160,11 +158,11 @@ ThroughT.Database == ChildT.Database {
     let basePath: [PathComponentsRepresentable]
     let path: [PathComponentsRepresentable]
 
-    public init(
+    init(
         siblingRelation: KeyPath<ParentType, Siblings<ParentType, ChildType, ThroughType>>,
         basePath: [PathComponentsRepresentable],
         path: [PathComponentsRepresentable]
-        ) {
+    ) {
         let path
             = path.count == 0
                 ? [String(describing: ChildType.self).snakeCased()! as PathComponentsRepresentable]

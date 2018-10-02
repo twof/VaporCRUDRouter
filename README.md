@@ -105,3 +105,5 @@ try controller.crudRegister(forSiblings: \.todos)
 - more fine grained response statuses
 - recursive relation configuration
 - automatically expose relations (blocked by lack of Swift reflection support)
+- documentation for all public functions
+- generate models and rest routes
