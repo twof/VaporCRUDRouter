@@ -69,7 +69,11 @@ public struct CrudController<ModelT: Model & Content>: CrudControllerProtocol wh
         self.path = path
         self.router = router
     }
+}
 
+
+// MARK: ParentsController methods
+extension CrudController {
     /// Returns a parent controller, which retrieves models that are parents of ModelType
     ///
     /// - Parameter relation: Keypath from origin model to a Parent relation, which goes from origin model to
@@ -86,18 +90,6 @@ public struct CrudController<ModelT: Model & Content>: CrudControllerProtocol wh
             return CrudParentController(relation: relation, basePath: baseIdPath, path: path)
     }
 
-    public func crudRouterCollection<ChildType>(
-        at path: PathComponentsRepresentable...,
-        forChildren relation: KeyPath<ModelType, Children<ModelType, ChildType>>
-        ) -> CrudChildrenController<ChildType, ModelType> where
-        ChildType: Model & Content,
-        ModelType.Database == ChildType.Database,
-        ChildType.ID: Parameter {
-            let baseIdPath = self.path.appending(ModelType.ID.parameter)
-
-            return CrudChildrenController(childrenRelation: relation, basePath: baseIdPath, path: path)
-    }
-
     public func crudRegister<ParentType>(
         at path: PathComponentsRepresentable...,
         forParent relation: KeyPath<ModelType, Parent<ModelType, ParentType>>,
@@ -111,6 +103,22 @@ public struct CrudController<ModelT: Model & Content>: CrudControllerProtocol wh
             let controller = CrudParentController(relation: relation, basePath: baseIdPath, path: path)
 
             try controller.boot(router: self.router)
+    }
+}
+
+
+// MARK: ChildController methods
+extension CrudController {
+    public func crudRouterCollection<ChildType>(
+        at path: PathComponentsRepresentable...,
+        forChildren relation: KeyPath<ModelType, Children<ModelType, ChildType>>
+        ) -> CrudChildrenController<ChildType, ModelType> where
+        ChildType: Model & Content,
+        ModelType.Database == ChildType.Database,
+        ChildType.ID: Parameter {
+            let baseIdPath = self.path.appending(ModelType.ID.parameter)
+
+            return CrudChildrenController(childrenRelation: relation, basePath: baseIdPath, path: path)
     }
 
     public func crudRegister<ChildType>(
@@ -127,21 +135,64 @@ public struct CrudController<ModelT: Model & Content>: CrudControllerProtocol wh
 
             try controller.boot(router: self.router)
     }
+}
 
-    //    public func crudRouterCollection<ChildType, ThroughType>(
-    //        forSiblings relation: KeyPath<ModelType, Siblings<ModelType, ChildType, ThroughType>>,
-    //        at path: [PathComponentsRepresentable]
-    //    ) -> CrudSiblingsController<ChildType, ModelType, ThroughType> where
-    //        ChildType: Content,
-    //        ModelType.Database == ThroughType.Database,
-    //        ChildType.ID: Parameter,
-    //        ThroughType: ModifiablePivot,
-    //        ThroughType.Database: JoinSupporting,
-    //        ThroughType.Database == ChildType.Database {
-    //            let baseIdPath = self.path.appending(ModelType.ID.parameter)
-    //
-    //            return CrudSiblingsController(siblingRelation: relation, basePath: baseIdPath, path: path)
-    //    }
+// MARK: SiblingController methods
+public extension CrudController {
+    public func crudRouterCollection<ChildType, ThroughType>(
+        forSiblings relation: KeyPath<ModelType, Siblings<ModelType, ChildType, ThroughType>>,
+        at path: [PathComponentsRepresentable]
+        ) -> CrudSiblingsController<ChildType, ModelType, ThroughType> where
+        ChildType: Content,
+        ModelType.Database == ThroughType.Database,
+        ChildType.ID: Parameter,
+        ThroughType: ModifiablePivot,
+        ThroughType.Database: JoinSupporting,
+        ThroughType.Database == ChildType.Database {
+            let baseIdPath = self.path.appending(ModelType.ID.parameter)
+
+            return CrudSiblingsController(siblingRelation: relation, basePath: baseIdPath, path: path)
+    }
+
+    public func crudRegister<ChildType, ThroughType>(
+        at path: PathComponentsRepresentable...,
+        forSiblings relation: KeyPath<ModelType, Siblings<ModelType, ChildType, ThroughType>>,
+        relationConfiguration: ((CrudSiblingsController<ChildType, ModelType, ThroughType>) throws -> Void)?=nil
+        ) throws where
+        ChildType: Content,
+        ModelType.Database == ThroughType.Database,
+        ChildType.ID: Parameter,
+        ThroughType: ModifiablePivot,
+        ThroughType.Database: JoinSupporting,
+        ThroughType.Database == ChildType.Database,
+        ThroughType.Left == ModelType,
+        ThroughType.Right == ChildType {
+            let baseIdPath = self.path.appending(ModelType.ID.parameter)
+
+            let controller = CrudSiblingsController(siblingRelation: relation, basePath: baseIdPath, path: path)
+
+            try controller.boot(router: self.router)
+    }
+
+    public func crudRegister<ChildType, ThroughType>(
+        at path: PathComponentsRepresentable...,
+        forSiblings relation: KeyPath<ModelType, Siblings<ModelType, ChildType, ThroughType>>,
+        relationConfiguration: ((CrudSiblingsController<ChildType, ModelType, ThroughType>) throws -> Void)?=nil
+        ) throws where
+        ChildType: Content,
+        ModelType.Database == ThroughType.Database,
+        ChildType.ID: Parameter,
+        ThroughType: ModifiablePivot,
+        ThroughType.Database: JoinSupporting,
+        ThroughType.Database == ChildType.Database,
+        ThroughType.Right == ModelType,
+        ThroughType.Left == ChildType {
+            let baseIdPath = self.path.appending(ModelType.ID.parameter)
+
+            let controller = CrudSiblingsController(siblingRelation: relation, basePath: baseIdPath, path: path)
+
+            try controller.boot(router: self.router)
+    }
 }
 
 extension CrudController: RouteCollection {
