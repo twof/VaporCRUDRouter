@@ -103,3 +103,5 @@ try controller.crudRegister(forSiblings: \.todos)
 - query parameter support
 - PATCH support
 - more fine grained response statuses
+- recursive relation configuration
+- automatically expose relations (blocked by lack of Swift reflection support)
