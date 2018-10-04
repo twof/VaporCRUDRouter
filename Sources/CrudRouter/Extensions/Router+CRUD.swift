@@ -11,9 +11,9 @@ public extension Router {
         return controller
     }
 
-    public func crudRegister<ModelType: Model & Content>(
+    public func crud<ModelType: Model & Content>(
         _ path: PathComponentsRepresentable...,
-        for type: ModelType.Type,
+        register type: ModelType.Type,
         relationConfiguration: ((CrudController<ModelType>) throws -> ())?=nil
     ) throws where ModelType.ID: Parameter {
         let controller = CrudController<ModelType>(path: path, router: self)

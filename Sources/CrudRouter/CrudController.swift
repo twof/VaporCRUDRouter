@@ -71,14 +71,13 @@ public struct CrudController<ModelT: Model & Content>: CrudControllerProtocol wh
     }
 }
 
-
-// MARK: ParentsController methods
+// MARK: Obsolted ParentsController methods
 extension CrudController {
     /// Returns a parent controller, which retrieves models that are parents of ModelType
     ///
     /// - Parameter relation: Keypath from origin model to a Parent relation, which goes from origin model to
     /// - Returns: relation controller, which retrieves models in relation to ModelType
-    public func crudRouterCollection<ParentType>(
+    public func crudRouteCollection<ParentType>(
         at path: PathComponentsRepresentable...,
         forParent relation: KeyPath<ModelType, Parent<ModelType, ParentType>>
     ) -> CrudParentController<ModelType, ParentType> where
@@ -90,9 +89,10 @@ extension CrudController {
             return CrudParentController(relation: relation, basePath: baseIdPath, path: path)
     }
 
-    public func crudRegister<ParentType>(
+    @available(swift, obsoleted: 4.0, renamed: "crud")
+    public func crud<ParentType>(
         at path: PathComponentsRepresentable...,
-        forParent relation: KeyPath<ModelType, Parent<ModelType, ParentType>>,
+        for relation: KeyPath<ModelType, Parent<ModelType, ParentType>>,
         relationConfiguration: ((CrudParentController<ModelType, ParentType>) throws -> Void)?=nil
     ) throws where
         ParentType: Model & Content,
@@ -109,10 +109,10 @@ extension CrudController {
 
 // MARK: ChildController methods
 extension CrudController {
-    public func crudRouterCollection<ChildType>(
+    public func crudRouteCollection<ChildType>(
         at path: PathComponentsRepresentable...,
         forChildren relation: KeyPath<ModelType, Children<ModelType, ChildType>>
-        ) -> CrudChildrenController<ChildType, ModelType> where
+    ) -> CrudChildrenController<ChildType, ModelType> where
         ChildType: Model & Content,
         ModelType.Database == ChildType.Database,
         ChildType.ID: Parameter {
@@ -121,11 +121,12 @@ extension CrudController {
             return CrudChildrenController(childrenRelation: relation, basePath: baseIdPath, path: path)
     }
 
-    public func crudRegister<ChildType>(
+    @available(swift, obsoleted: 4.0, renamed: "crud")
+    public func crud<ChildType>(
         at path: PathComponentsRepresentable...,
-        forChildren relation: KeyPath<ModelType, Children<ModelType, ChildType>>,
+        children relation: KeyPath<ModelType, Children<ModelType, ChildType>>,
         relationConfiguration: ((CrudChildrenController<ChildType, ModelType>) throws -> Void)?=nil
-        ) throws where
+    ) throws where
         ChildType: Model & Content,
         ModelType.Database == ChildType.Database,
         ChildType.ID: Parameter {
@@ -139,10 +140,10 @@ extension CrudController {
 
 // MARK: SiblingController methods
 public extension CrudController {
-    public func crudRouterCollection<ChildType, ThroughType>(
+    public func crudRouteCollection<ChildType, ThroughType>(
         forSiblings relation: KeyPath<ModelType, Siblings<ModelType, ChildType, ThroughType>>,
         at path: [PathComponentsRepresentable]
-        ) -> CrudSiblingsController<ChildType, ModelType, ThroughType> where
+    ) -> CrudSiblingsController<ChildType, ModelType, ThroughType> where
         ChildType: Content,
         ModelType.Database == ThroughType.Database,
         ChildType.ID: Parameter,
@@ -154,11 +155,12 @@ public extension CrudController {
             return CrudSiblingsController(siblingRelation: relation, basePath: baseIdPath, path: path)
     }
 
-    public func crudRegister<ChildType, ThroughType>(
+    @available(swift, obsoleted: 4.0, renamed: "crud")
+    public func crud<ChildType, ThroughType>(
         at path: PathComponentsRepresentable...,
-        forSiblings relation: KeyPath<ModelType, Siblings<ModelType, ChildType, ThroughType>>,
+        siblings relation: KeyPath<ModelType, Siblings<ModelType, ChildType, ThroughType>>,
         relationConfiguration: ((CrudSiblingsController<ChildType, ModelType, ThroughType>) throws -> Void)?=nil
-        ) throws where
+    ) throws where
         ChildType: Content,
         ModelType.Database == ThroughType.Database,
         ChildType.ID: Parameter,
@@ -174,11 +176,12 @@ public extension CrudController {
             try controller.boot(router: self.router)
     }
 
-    public func crudRegister<ChildType, ThroughType>(
+    @available(swift, obsoleted: 4.0, renamed: "crud")
+    public func crud<ChildType, ThroughType>(
         at path: PathComponentsRepresentable...,
-        forSiblings relation: KeyPath<ModelType, Siblings<ModelType, ChildType, ThroughType>>,
+        siblings relation: KeyPath<ModelType, Siblings<ModelType, ChildType, ThroughType>>,
         relationConfiguration: ((CrudSiblingsController<ChildType, ModelType, ThroughType>) throws -> Void)?=nil
-        ) throws where
+    ) throws where
         ChildType: Content,
         ModelType.Database == ThroughType.Database,
         ChildType.ID: Parameter,
@@ -197,7 +200,6 @@ public extension CrudController {
 
 extension CrudController: RouteCollection {
     public func boot(router: Router) throws {
-
         let basePath = path
         let baseIdPath = path.appending(ModelType.ID.parameter)
 
