@@ -21,7 +21,7 @@ targets: [
 ## Usage
 Within your router setup (`routes.swift` in the default Vapor API template)
 ```swift
-router.crudRegister(for: Todo.self)
+router.crud(register: Todo.self)
 ```
 That's it!
 
@@ -38,7 +38,7 @@ DELETE /todo/:id
 Generated paths default to using lower snake case so for example, if you were to do
 
 ```swift
-router.crudRegister(for: SchoolTeacher.self)
+router.crud(register: SchoolTeacher.self)
 ```
 you'd get routes like
 
@@ -54,7 +54,7 @@ DELETE /school_teacher/:id
 If you'd like to supply your own path rather than using the name of the supplied model, you can also do that
 
 ```swift
-router.crudRegister("account", for: User.self)
+router.crud("account", register: User.self)
 ```
 results in
 
@@ -70,8 +70,8 @@ DELETE /account/:id
 Say you had a model `User`, which was the parent of another model `Todo`. If you'd like routes to expose all `Todo`s that belong to a specific `User`, you can do something like this.
 
 ```swift
-try router.crudRegister(for: User.self) { controller in
-    try controller.crudRegister(forChildren: \.todos)
+try router.crud(register: User.self) { controller in
+    try controller.crud(children: \.todos)
 }
 ```
 
@@ -94,9 +94,9 @@ DELETE/user/:id/todo/:id
 within the supplied closure, you can also expose routes for related `Parent`s and `Sibling`s
 
 ```swift
-try controller.crudRegister(forChildren: \.todos)
-try controller.crudRegister(forParent: \.todos)
-try controller.crudRegister(forSiblings: \.todos)
+try controller.crud(children: \.todos)
+try controller.crud(parent: \.todos)
+try controller.crud(siblings: \.todos)
 ```
 
 ### Future features
