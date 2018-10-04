@@ -89,7 +89,6 @@ extension CrudController {
             return CrudParentController(relation: relation, basePath: baseIdPath, path: path)
     }
 
-    @available(swift, obsoleted: 4.0, renamed: "crud")
     public func crud<ParentType>(
         at path: PathComponentsRepresentable...,
         for relation: KeyPath<ModelType, Parent<ModelType, ParentType>>,
@@ -121,7 +120,6 @@ extension CrudController {
             return CrudChildrenController(childrenRelation: relation, basePath: baseIdPath, path: path)
     }
 
-    @available(swift, obsoleted: 4.0, renamed: "crud")
     public func crud<ChildType>(
         at path: PathComponentsRepresentable...,
         children relation: KeyPath<ModelType, Children<ModelType, ChildType>>,
@@ -155,7 +153,6 @@ public extension CrudController {
             return CrudSiblingsController(siblingRelation: relation, basePath: baseIdPath, path: path)
     }
 
-    @available(swift, obsoleted: 4.0, renamed: "crud")
     public func crud<ChildType, ThroughType>(
         at path: PathComponentsRepresentable...,
         siblings relation: KeyPath<ModelType, Siblings<ModelType, ChildType, ThroughType>>,
@@ -176,7 +173,6 @@ public extension CrudController {
             try controller.boot(router: self.router)
     }
 
-    @available(swift, obsoleted: 4.0, renamed: "crud")
     public func crud<ChildType, ThroughType>(
         at path: PathComponentsRepresentable...,
         siblings relation: KeyPath<ModelType, Siblings<ModelType, ChildType, ThroughType>>,
