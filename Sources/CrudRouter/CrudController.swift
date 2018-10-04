@@ -91,7 +91,7 @@ extension CrudController {
 
     public func crud<ParentType>(
         at path: PathComponentsRepresentable...,
-        for relation: KeyPath<ModelType, Parent<ModelType, ParentType>>,
+        parent relation: KeyPath<ModelType, Parent<ModelType, ParentType>>,
         relationConfiguration: ((CrudParentController<ModelType, ParentType>) throws -> Void)?=nil
     ) throws where
         ParentType: Model & Content,
