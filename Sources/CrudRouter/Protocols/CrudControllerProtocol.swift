@@ -12,32 +12,46 @@ public protocol CrudControllerProtocol {
 
 public extension CrudControllerProtocol where ModelType: Publicable {
     func indexAll(_ req: Request) throws -> Future<[ModelType.PublicModel]> {
-        return ModelType.PublicModel.query(on: req).all().map { Array($0) }
+        return ModelType
+            .query(on: req)
+            .all()
+            .map { models in
+                return try Array(models)
+                    .map { try $0.public(on: req) }
+            }
     }
     
     func index(_ req: Request) throws -> Future<ModelType.PublicModel> {
-        let id: ModelType.PublicModel.ID = try getId(from: req)
-        return ModelType.PublicModel.find(id, on: req).unwrap(or: Abort(.notFound))
+        let id: ModelType.ID = try getId(from: req)
+        
+        return ModelType
+            .find(id, on: req)
+            .unwrap(or: Abort(.notFound))
+            .map { model in
+                return try model.public(on: req)
+            }
     }
     
     func create(_ req: Request) throws -> Future<ModelType.PublicModel> {
-        return try req.content.decode(ModelType.PublicModel.self).flatMap { model in
-            return model.save(on: req)
+        return try req.content.decode(ModelType.self).flatMap { model in
+            return model.save(on: req).map { try $0.public(on: req) }
         }
     }
     
     func update(_ req: Request) throws -> Future<ModelType.PublicModel> {
-        let id: ModelType.PublicModel.ID = try getId(from: req)
-        return try req.content.decode(ModelType.PublicModel.self).flatMap { model in
+        let id: ModelType.ID = try getId(from: req)
+        
+        return try req.content.decode(ModelType.self).flatMap { model in
             var temp = model
             temp.fluentID = id
-            return temp.update(on: req)
+            return temp.update(on: req).map { try $0.public(on: req) }
         }
     }
     
     func delete(_ req: Request) throws -> Future<HTTPStatus> {
-        let id: ModelType.PublicModel.ID = try getId(from: req)
-        return ModelType.PublicModel
+        let id: ModelType.ID = try getId(from: req)
+        
+        return ModelType
             .find(id, on: req)
             .unwrap(or: Abort(.notFound))
             .flatMap { model in
