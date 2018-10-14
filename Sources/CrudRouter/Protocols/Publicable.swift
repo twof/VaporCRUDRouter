@@ -2,7 +2,7 @@ import Fluent
 import Vapor
 
 public protocol Publicable {
-    associatedtype PublicModel: Model & Content
+    associatedtype PublicModel: Content
     
     func `public`(on conn: DatabaseConnectable) throws -> Future<PublicModel>
 }
