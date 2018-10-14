@@ -4,5 +4,5 @@ import Vapor
 public protocol Publicable {
     associatedtype PublicModel: Model & Content
     
-    func `public`(on conn: DatabaseConnectable) throws -> PublicModel
+    func `public`(on conn: DatabaseConnectable) throws -> Future<PublicModel>
 }

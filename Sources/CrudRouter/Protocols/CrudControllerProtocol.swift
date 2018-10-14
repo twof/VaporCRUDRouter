@@ -15,9 +15,10 @@ public extension CrudControllerProtocol where ModelType: Publicable {
         return ModelType
             .query(on: req)
             .all()
-            .map { models in
-                return try Array(models)
+            .flatMap { models in
+                return try models
                     .map { try $0.public(on: req) }
+                    .flatten(on: req)
             }
     }
     
@@ -27,14 +28,14 @@ public extension CrudControllerProtocol where ModelType: Publicable {
         return ModelType
             .find(id, on: req)
             .unwrap(or: Abort(.notFound))
-            .map { model in
+            .flatMap { model in
                 return try model.public(on: req)
             }
     }
     
     func create(_ req: Request) throws -> Future<ModelType.PublicModel> {
         return try req.content.decode(ModelType.self).flatMap { model in
-            return model.save(on: req).map { try $0.public(on: req) }
+            return model.save(on: req).flatMap { try $0.public(on: req) }
         }
     }
     
@@ -44,7 +45,7 @@ public extension CrudControllerProtocol where ModelType: Publicable {
         return try req.content.decode(ModelType.self).flatMap { model in
             var temp = model
             temp.fluentID = id
-            return temp.update(on: req).map { try $0.public(on: req) }
+            return temp.update(on: req).flatMap { try $0.public(on: req) }
         }
     }
     
