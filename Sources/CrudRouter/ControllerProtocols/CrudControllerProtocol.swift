@@ -16,7 +16,7 @@ public extension CrudControllerProtocol {
     }
 
     func index(_ req: Request) throws -> Future<ModelType> {
-        let id: ModelType.ID = try getId(from: req)
+        let id: ModelType.ID = try req.getId()
         return ModelType.find(id, on: req).unwrap(or: Abort(.notFound))
     }
 
@@ -27,7 +27,7 @@ public extension CrudControllerProtocol {
     }
 
     func update(_ req: Request) throws -> Future<ModelType> {
-        let id: ModelType.ID = try getId(from: req)
+        let id: ModelType.ID = try req.getId()
         return try req.content.decode(ModelType.self).flatMap { model in
             var temp = model
             temp.fluentID = id
@@ -36,7 +36,7 @@ public extension CrudControllerProtocol {
     }
 
     func delete(_ req: Request) throws -> Future<HTTPStatus> {
-        let id: ModelType.ID = try getId(from: req)
+        let id: ModelType.ID = try req.getId()
         return ModelType
             .find(id, on: req)
             .unwrap(or: Abort(.notFound))
