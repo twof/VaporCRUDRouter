@@ -1,24 +1,6 @@
 import Vapor
 import Fluent
 
-public enum ParentRouterMethods {
-    case read
-    case update
-
-    func register<ChildType, ParentType>(
-        router: Router,
-        controller: CrudParentController<ChildType, ParentType>,
-        path: [PathComponentsRepresentable]
-    ) {
-        switch self {
-        case .read:
-            router.get(path, use: controller.index)
-        case .update:
-            router.put(path, use: controller.update)
-        }
-    }
-}
-
 public protocol CrudParentControllerProtocol {
     associatedtype ParentType: Model & Content where ParentType.ID: Parameter
     associatedtype ChildType: Model & Content where ChildType.ID: Parameter, ChildType.Database == ParentType.Database
@@ -57,13 +39,13 @@ public struct CrudParentController<ChildT: Model & Content, ParentT: Model & Con
     public let relation: KeyPath<ChildType, Parent<ChildType, ParentType>>
     let basePath: [PathComponentsRepresentable]
     let path: [PathComponentsRepresentable]
-    let activeMethods: Set<ParentRouterMethods>
+    let activeMethods: Set<ParentRouterMethod>
 
     init(
         relation: KeyPath<ChildType, Parent<ChildType, ParentType>>,
         basePath: [PathComponentsRepresentable],
         path: [PathComponentsRepresentable],
-        activeMethods: Set<ParentRouterMethods>
+        activeMethods: Set<ParentRouterMethod>
     ) {
         let adjustedPath = path.adjustedPath(for: ParentType.self)
 

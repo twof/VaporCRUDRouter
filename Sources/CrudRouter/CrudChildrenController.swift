@@ -1,34 +1,6 @@
 import Vapor
 import Fluent
 
-public enum ChildrenRouterMethods {
-    case read
-    case readAll
-    case create
-    case update
-    case delete
-
-    func register<ChildType, ParentType>(
-        router: Router,
-        controller: CrudChildrenController<ChildType, ParentType>,
-        path: [PathComponentsRepresentable],
-        idPath: [PathComponentsRepresentable]
-    ) {
-        switch self {
-        case .read:
-            router.get(idPath, use: controller.index)
-        case .readAll:
-            router.get(path, use: controller.indexAll)
-        case .create:
-            router.post(path, use: controller.create)
-        case .update:
-            router.put(idPath, use: controller.update)
-        case .delete:
-            router.delete(idPath, use: controller.delete)
-        }
-    }
-}
-
 public protocol CrudChildrenControllerProtocol {
     associatedtype ParentType: Model & Content where ParentType.ID: Parameter
     associatedtype ChildType: Model & Content where ChildType.ID: Parameter, ChildType.Database == ParentType.Database
@@ -127,14 +99,14 @@ public struct CrudChildrenController<ChildT: Model & Content, ParentT: Model & C
     public var children: KeyPath<ParentT, Children<ParentT, ChildT>>
     let basePath: [PathComponentsRepresentable]
     let path: [PathComponentsRepresentable]
-    let activeMethods: Set<ChildrenRouterMethods>
+    let activeMethods: Set<ChildrenRouterMethod>
 
     init(
         childrenRelation: KeyPath<ParentT,
         Children<ParentT, ChildT>>,
         basePath: [PathComponentsRepresentable],
         path: [PathComponentsRepresentable],
-        activeMethods: Set<ChildrenRouterMethods>
+        activeMethods: Set<ChildrenRouterMethod>
     ) {
         let adjustedPath = path.adjustedPath(for: ChildType.self)
 

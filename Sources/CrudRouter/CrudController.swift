@@ -59,9 +59,9 @@ public struct CrudController<ModelT: Model & Content>: CrudControllerProtocol wh
 
     let path: [PathComponentsRepresentable]
     let router: Router
-    let activeMethods: Set<RouterMethods>
+    let activeMethods: Set<RouterMethod>
 
-    init(path: [PathComponentsRepresentable], router: Router, activeMethods: Set<RouterMethods>) {
+    init(path: [PathComponentsRepresentable], router: Router, activeMethods: Set<RouterMethod>) {
         let adjustedPath = path.adjustedPath(for: ModelType.self)
 
         self.path = adjustedPath
@@ -74,7 +74,7 @@ extension CrudController {
     public func crud<ParentType>(
         at path: PathComponentsRepresentable...,
         parent relation: KeyPath<ModelType, Parent<ModelType, ParentType>>,
-        useMethods: [ParentRouterMethods] = [.read, .update],
+        useMethods: [ParentRouterMethod] = [.read, .update],
         relationConfiguration: ((CrudParentController<ModelType, ParentType>) throws -> Void)?=nil
     ) throws where
         ParentType: Model & Content,
@@ -94,7 +94,7 @@ extension CrudController {
     public func crud<ChildType>(
         at path: PathComponentsRepresentable...,
         children relation: KeyPath<ModelType, Children<ModelType, ChildType>>,
-        useMethods: [ChildrenRouterMethods] = [.read, .readAll, .create, .update, .delete],
+        useMethods: [ChildrenRouterMethod] = [.read, .readAll, .create, .update, .delete],
         relationConfiguration: ((CrudChildrenController<ChildType, ModelType>) throws -> Void)?=nil
     ) throws where
         ChildType: Model & Content,
@@ -113,7 +113,7 @@ public extension CrudController {
     public func crud<ChildType, ThroughType>(
         at path: PathComponentsRepresentable...,
         siblings relation: KeyPath<ModelType, Siblings<ModelType, ChildType, ThroughType>>,
-        useMethods: [ModifiableSiblingRouterMethods] = [.read, .readAll, .create, .update, .delete],
+        useMethods: [ModifiableSiblingRouterMethod] = [.read, .readAll, .create, .update, .delete],
         relationConfiguration: ((CrudSiblingsController<ChildType, ModelType, ThroughType>) throws -> Void)?=nil
     ) throws where
         ChildType: Content,
@@ -134,7 +134,7 @@ public extension CrudController {
     public func crud<ChildType, ThroughType>(
         at path: PathComponentsRepresentable...,
         siblings relation: KeyPath<ModelType, Siblings<ModelType, ChildType, ThroughType>>,
-        useMethods: [ModifiableSiblingRouterMethods] = [.read, .readAll, .create, .update, .delete],
+        useMethods: [ModifiableSiblingRouterMethod] = [.read, .readAll, .create, .update, .delete],
         relationConfiguration: ((CrudSiblingsController<ChildType, ModelType, ThroughType>) throws -> Void)?=nil
     ) throws where
         ChildType: Content,
