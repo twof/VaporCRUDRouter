@@ -1,6 +1,24 @@
 import Vapor
 import Fluent
 
+public enum ParentRouterMethods {
+    case read
+    case update
+
+    func register<ChildType, ParentType>(
+        router: Router,
+        controller: CrudParentController<ChildType, ParentType>,
+        path: [PathComponentsRepresentable]
+    ) {
+        switch self {
+        case .read:
+            router.get(path, use: controller.index)
+        case .update:
+            router.put(path, use: controller.update)
+        }
+    }
+}
+
 public protocol CrudParentControllerProtocol {
     associatedtype ParentType: Model & Content where ParentType.ID: Parameter
     associatedtype ChildType: Model & Content where ChildType.ID: Parameter, ChildType.Database == ParentType.Database
@@ -12,7 +30,6 @@ public protocol CrudParentControllerProtocol {
 }
 
 public extension CrudParentControllerProtocol {
-
     func index(_ req: Request) throws -> Future<ParentType> {
         let childId: ChildType.ID = try req.getId()
 
@@ -40,13 +57,20 @@ public struct CrudParentController<ChildT: Model & Content, ParentT: Model & Con
     public let relation: KeyPath<ChildType, Parent<ChildType, ParentType>>
     let basePath: [PathComponentsRepresentable]
     let path: [PathComponentsRepresentable]
+    let activeMethods: Set<ParentRouterMethods>
 
-    init(relation: KeyPath<ChildType, Parent<ChildType, ParentType>>, basePath: [PathComponentsRepresentable], path: [PathComponentsRepresentable]) {
+    init(
+        relation: KeyPath<ChildType, Parent<ChildType, ParentType>>,
+        basePath: [PathComponentsRepresentable],
+        path: [PathComponentsRepresentable],
+        activeMethods: Set<ParentRouterMethods>
+    ) {
         let adjustedPath = path.adjustedPath(for: ParentType.self)
 
         self.relation = relation
         self.basePath = basePath
         self.path = adjustedPath
+        self.activeMethods = activeMethods
     }
 }
 
@@ -54,7 +78,12 @@ extension CrudParentController: RouteCollection {
     public func boot(router: Router) throws {
         let parentPath = self.basePath.appending(self.path)
 
-        router.get(parentPath, use: self.index)
-        router.put(parentPath, use: self.update)
+        self.activeMethods.forEach {
+            $0.register(
+                router: router,
+                controller: self,
+                path: parentPath
+            )
+        }
     }
 }

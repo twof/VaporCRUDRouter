@@ -1,5 +1,6 @@
 import Vapor
 import Fluent
+
 public enum RouterMethods {
     case read
     case readAll
