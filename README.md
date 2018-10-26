@@ -107,4 +107,5 @@ try controller.crud(siblings: \.todos)
 - automatically expose relations (blocked by lack of Swift reflection support)
 - documentation for all public functions
 - generate models and rest routes via console command
-- enum based route selection
+- Publicable support
+- Fine grained per route public return models
