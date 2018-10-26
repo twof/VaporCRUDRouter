@@ -74,6 +74,7 @@ extension CrudController {
     public func crud<ParentType>(
         at path: PathComponentsRepresentable...,
         parent relation: KeyPath<ModelType, Parent<ModelType, ParentType>>,
+        useMethods: [ParentRouterMethods] = [.read, .update],
         relationConfiguration: ((CrudParentController<ModelType, ParentType>) throws -> Void)?=nil
     ) throws where
         ParentType: Model & Content,
@@ -81,7 +82,7 @@ extension CrudController {
         ParentType.ID: Parameter {
             let baseIdPath = self.path.appending(ModelType.ID.parameter)
 
-            let controller = CrudParentController(relation: relation, basePath: baseIdPath, path: path)
+            let controller = CrudParentController(relation: relation, basePath: baseIdPath, path: path, activeMethods: Set(useMethods))
 
             try controller.boot(router: self.router)
     }
@@ -125,7 +126,7 @@ public extension CrudController {
         ThroughType.Right == ChildType {
             let baseIdPath = self.path.appending(ModelType.ID.parameter)
 
-            let controller = CrudSiblingsController(siblingRelation: relation, basePath: baseIdPath, path: path)
+            let controller = CrudSiblingsController(siblingRelation: relation, basePath: baseIdPath, path: path, activeMethods: Set(useMethods))
 
             try controller.boot(router: self.router)
     }
@@ -146,7 +147,7 @@ public extension CrudController {
         ThroughType.Left == ChildType {
             let baseIdPath = self.path.appending(ModelType.ID.parameter)
 
-            let controller = CrudSiblingsController(siblingRelation: relation, basePath: baseIdPath, path: path)
+            let controller = CrudSiblingsController(siblingRelation: relation, basePath: baseIdPath, path: path, activeMethods: Set(useMethods))
 
             try controller.boot(router: self.router)
     }
