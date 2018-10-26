@@ -1,9 +1,7 @@
 import Vapor
 import Fluent
 
-public struct CrudController<ModelT: Model & Content>: CrudControllerProtocol where ModelT.ID: Parameter {
-    public typealias ModelType = ModelT
-
+public struct CrudController<ModelT: Model & Content> where ModelT.ID: Parameter {
     let path: [PathComponentsRepresentable]
     let router: Router
 
@@ -16,6 +14,18 @@ public struct CrudController<ModelT: Model & Content>: CrudControllerProtocol wh
         self.path = path
         self.router = router
     }
+}
+
+extension CrudController: CrudControllerProtocol {
+    public typealias ModelType = ModelT
+}
+
+extension CrudController where ModelT: Publicable {
+    public typealias ReturnModelType = ModelT.PublicModel
+}
+
+extension CrudController {
+    public typealias ReturnModelType = ModelT
 }
 
 // MARK: Obsolted ParentsController methods
@@ -40,7 +50,7 @@ extension CrudController {
         at path: PathComponentsRepresentable...,
         parent relation: KeyPath<ModelType, Parent<ModelType, ParentType>>,
         relationConfiguration: ((CrudParentController<ModelType, ParentType>) throws -> Void)?=nil
-    ) throws where
+    ) where
         ParentType: Model & Content,
         ModelType.Database == ParentType.Database,
         ParentType.ID: Parameter {
@@ -48,7 +58,7 @@ extension CrudController {
 
             let controller = CrudParentController(relation: relation, basePath: baseIdPath, path: path)
 
-            try controller.boot(router: self.router)
+            do { try controller.boot(router: self.router) } catch { fatalError("I have no reason to expect boot to throw") }
     }
 }
 
@@ -71,7 +81,7 @@ extension CrudController {
         at path: PathComponentsRepresentable...,
         children relation: KeyPath<ModelType, Children<ModelType, ChildType>>,
         relationConfiguration: ((CrudChildrenController<ChildType, ModelType>) throws -> Void)?=nil
-    ) throws where
+    ) where
         ChildType: Model & Content,
         ModelType.Database == ChildType.Database,
         ChildType.ID: Parameter {
@@ -79,7 +89,7 @@ extension CrudController {
 
             let controller = CrudChildrenController(childrenRelation: relation, basePath: baseIdPath, path: path)
 
-            try controller.boot(router: self.router)
+            do { try controller.boot(router: self.router) } catch { fatalError("I have no reason to expect boot to throw") }
     }
 }
 
@@ -104,7 +114,7 @@ public extension CrudController {
         at path: PathComponentsRepresentable...,
         siblings relation: KeyPath<ModelType, Siblings<ModelType, ChildType, ThroughType>>,
         relationConfiguration: ((CrudSiblingsController<ChildType, ModelType, ThroughType>) throws -> Void)?=nil
-    ) throws where
+    ) where
         ChildType: Content,
         ModelType.Database == ThroughType.Database,
         ChildType.ID: Parameter,
@@ -117,14 +127,14 @@ public extension CrudController {
 
             let controller = CrudSiblingsController(siblingRelation: relation, basePath: baseIdPath, path: path)
 
-            try controller.boot(router: self.router)
+            do { try controller.boot(router: self.router) } catch { fatalError("I have no reason to expect boot to throw") }
     }
 
     public func crud<ChildType, ThroughType>(
         at path: PathComponentsRepresentable...,
         siblings relation: KeyPath<ModelType, Siblings<ModelType, ChildType, ThroughType>>,
         relationConfiguration: ((CrudSiblingsController<ChildType, ModelType, ThroughType>) throws -> Void)?=nil
-    ) throws where
+    ) where
         ChildType: Content,
         ModelType.Database == ThroughType.Database,
         ChildType.ID: Parameter,
@@ -137,7 +147,7 @@ public extension CrudController {
 
             let controller = CrudSiblingsController(siblingRelation: relation, basePath: baseIdPath, path: path)
 
-            try controller.boot(router: self.router)
+            do { try controller.boot(router: self.router) } catch { fatalError("I have no reason to expect boot to throw") }
     }
 }
 

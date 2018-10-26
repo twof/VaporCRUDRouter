@@ -3,14 +3,15 @@ import Fluent
 
 public protocol CrudControllerProtocol {
     associatedtype ModelType: Model, Content where ModelType.ID: Parameter
-    func indexAll(_ req: Request) throws -> Future<[ModelType]>
-    func index(_ req: Request) throws -> Future<ModelType>
-    func update(_ req: Request) throws -> Future<ModelType>
-    func create(_ req: Request) throws -> Future<ModelType>
+    associatedtype ReturnModelType: Content
+    func indexAll(_ req: Request) throws -> Future<[ReturnModelType]>
+    func index(_ req: Request) throws -> Future<ReturnModelType>
+    func update(_ req: Request) throws -> Future<ReturnModelType>
+    func create(_ req: Request) throws -> Future<ReturnModelType>
     func delete(_ req: Request) throws -> Future<HTTPStatus>
 }
 
-public extension CrudControllerProtocol where ModelType: Publicable {
+public extension CrudControllerProtocol where ModelType: Publicable, ReturnModelType == ModelType.PublicModel {
     func indexAll(_ req: Request) throws -> Future<[ModelType.PublicModel]> {
         return ModelType
             .query(on: req)
@@ -61,9 +62,11 @@ public extension CrudControllerProtocol where ModelType: Publicable {
     }
 }
 
-public extension CrudControllerProtocol {
+public extension CrudControllerProtocol where ReturnModelType == ModelType {
     func indexAll(_ req: Request) throws -> Future<[ModelType]> {
-        return ModelType.query(on: req).all().map { Array($0) }
+        return ModelType.query(on: req).all().map { elements in
+            Array(elements)
+        }
     }
     
     func index(_ req: Request) throws -> Future<ModelType> {
@@ -104,3 +107,5 @@ fileprivate extension CrudControllerProtocol {
         return id
     }
 }
+
+

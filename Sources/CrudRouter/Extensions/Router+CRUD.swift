@@ -14,11 +14,11 @@ public extension Router {
     public func crud<ModelType: Model & Content>(
         _ path: PathComponentsRepresentable...,
         register type: ModelType.Type,
-        relationConfiguration: ((CrudController<ModelType>) throws -> ())?=nil
-    ) throws where ModelType.ID: Parameter {
+        relationConfiguration: ((CrudController<ModelType>) -> ())?=nil
+    ) where ModelType.ID: Parameter {
         let controller = CrudController<ModelType>(path: path, router: self)
-        try controller.boot(router: self)
-
-        try relationConfiguration?(controller)
+        do { try controller.boot(router: self) } catch { fatalError("I have no reason to expect boot to throw") }
+        
+        relationConfiguration?(controller)
     }
 }
