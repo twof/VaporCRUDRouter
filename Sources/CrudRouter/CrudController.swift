@@ -21,7 +21,7 @@ extension CrudController {
     public func crud<ParentType>(
         at path: PathComponentsRepresentable...,
         parent relation: KeyPath<ModelType, Parent<ModelType, ParentType>>,
-        useMethods: [ParentRouterMethod] = [.read, .update],
+        _ either: OnlyExceptEither<ParentRouterMethod> = .only([.read, .update]),
         relationConfiguration: ((CrudParentController<ModelType, ParentType>) throws -> Void)?=nil
     ) throws where
         ParentType: Model & Content,
@@ -29,7 +29,15 @@ extension CrudController {
         ParentType.ID: Parameter {
             let baseIdPath = self.path.appending(ModelType.ID.parameter)
 
-            let controller = CrudParentController(relation: relation, basePath: baseIdPath, path: path, activeMethods: Set(useMethods))
+            let allMethods: Set<ParentRouterMethod> = Set([.read, .update])
+            let controller: CrudParentController<ModelType, ParentType>
+
+            switch either {
+            case .only(let methods):
+                controller = CrudParentController(relation: relation, basePath: baseIdPath, path: path, activeMethods: Set(methods))
+            case .except(let methods):
+                controller = CrudParentController(relation: relation, basePath: baseIdPath, path: path, activeMethods: allMethods.subtracting(Set(methods)))
+            }
 
             try controller.boot(router: self.router)
     }
@@ -41,7 +49,7 @@ extension CrudController {
     public func crud<ChildType>(
         at path: PathComponentsRepresentable...,
         children relation: KeyPath<ModelType, Children<ModelType, ChildType>>,
-        useMethods: [ChildrenRouterMethod] = [.read, .readAll, .create, .update, .delete],
+        _ either: OnlyExceptEither<ChildrenRouterMethod> = .only([.read, .readAll, .create, .update, .delete]),
         relationConfiguration: ((CrudChildrenController<ChildType, ModelType>) throws -> Void)?=nil
     ) throws where
         ChildType: Model & Content,
@@ -49,7 +57,15 @@ extension CrudController {
         ChildType.ID: Parameter {
             let baseIdPath = self.path.appending(ModelType.ID.parameter)
 
-            let controller = CrudChildrenController(childrenRelation: relation, basePath: baseIdPath, path: path, activeMethods: Set(useMethods))
+            let allMethods: Set<ChildrenRouterMethod> = Set([.read, .update])
+            let controller: CrudChildrenController<ChildType, ModelType>
+
+            switch either {
+            case .only(let methods):
+                controller = CrudChildrenController(childrenRelation: relation, basePath: baseIdPath, path: path, activeMethods: Set(methods))
+            case .except(let methods):
+                controller = CrudChildrenController(childrenRelation: relation, basePath: baseIdPath, path: path, activeMethods: allMethods.subtracting(Set(methods)))
+            }
 
             try controller.boot(router: self.router)
     }
@@ -60,7 +76,7 @@ public extension CrudController {
     public func crud<ChildType, ThroughType>(
         at path: PathComponentsRepresentable...,
         siblings relation: KeyPath<ModelType, Siblings<ModelType, ChildType, ThroughType>>,
-        useMethods: [ModifiableSiblingRouterMethod] = [.read, .readAll, .create, .update, .delete],
+        _ either: OnlyExceptEither<ModifiableSiblingRouterMethod> = .only([.read, .readAll, .create, .update, .delete]),
         relationConfiguration: ((CrudSiblingsController<ChildType, ModelType, ThroughType>) throws -> Void)?=nil
     ) throws where
         ChildType: Content,
@@ -73,7 +89,15 @@ public extension CrudController {
         ThroughType.Right == ChildType {
             let baseIdPath = self.path.appending(ModelType.ID.parameter)
 
-            let controller = CrudSiblingsController(siblingRelation: relation, basePath: baseIdPath, path: path, activeMethods: Set(useMethods))
+            let allMethods: Set<ModifiableSiblingRouterMethod> = Set([.read, .readAll, .create, .update, .delete])
+            let controller: CrudSiblingsController<ChildType, ModelType, ThroughType>
+
+            switch either {
+            case .only(let methods):
+                controller = CrudSiblingsController(siblingRelation: relation, basePath: baseIdPath, path: path, activeMethods: Set(methods))
+            case .except(let methods):
+                controller = CrudSiblingsController(siblingRelation: relation, basePath: baseIdPath, path: path, activeMethods: allMethods.subtracting(Set(methods)))
+            }
 
             try controller.boot(router: self.router)
     }
@@ -81,7 +105,7 @@ public extension CrudController {
     public func crud<ChildType, ThroughType>(
         at path: PathComponentsRepresentable...,
         siblings relation: KeyPath<ModelType, Siblings<ModelType, ChildType, ThroughType>>,
-        useMethods: [ModifiableSiblingRouterMethod] = [.read, .readAll, .create, .update, .delete],
+        _ either: OnlyExceptEither<ModifiableSiblingRouterMethod> = .only([.read, .readAll, .create, .update, .delete]),
         relationConfiguration: ((CrudSiblingsController<ChildType, ModelType, ThroughType>) throws -> Void)?=nil
     ) throws where
         ChildType: Content,
@@ -94,7 +118,15 @@ public extension CrudController {
         ThroughType.Left == ChildType {
             let baseIdPath = self.path.appending(ModelType.ID.parameter)
 
-            let controller = CrudSiblingsController(siblingRelation: relation, basePath: baseIdPath, path: path, activeMethods: Set(useMethods))
+            let allMethods: Set<ModifiableSiblingRouterMethod> = Set([.read, .readAll, .create, .update, .delete])
+            let controller: CrudSiblingsController<ChildType, ModelType, ThroughType>
+
+            switch either {
+            case .only(let methods):
+                controller = CrudSiblingsController(siblingRelation: relation, basePath: baseIdPath, path: path, activeMethods: Set(methods))
+            case .except(let methods):
+                controller = CrudSiblingsController(siblingRelation: relation, basePath: baseIdPath, path: path, activeMethods: allMethods.subtracting(Set(methods)))
+            }
 
             try controller.boot(router: self.router)
     }
