@@ -1,6 +1,78 @@
 import Vapor
 import Fluent
 
+public enum ModifiableSiblingRouterMethods {
+    case read
+    case readAll
+    case create
+    case update
+    case delete
+
+    func register<ChildType, ParentType, ThroughType: ModifiablePivot>(
+        router: Router,
+        controller: CrudSiblingsController<ChildType, ParentType, ThroughType>,
+        path: [PathComponentsRepresentable],
+        idPath: [PathComponentsRepresentable]
+    ) where ThroughType.Left == ParentType,
+        ThroughType.Right == ChildType {
+            switch self {
+            case .read:
+                router.get(idPath, use: controller.index)
+            case .readAll:
+                router.get(path, use: controller.indexAll)
+            case .create:
+                router.post(path, use: controller.create)
+            case .update:
+                router.put(idPath, use: controller.update)
+            case .delete:
+                router.delete(idPath, use: controller.delete)
+            }
+    }
+
+    func register<ChildType, ParentType, ThroughType: ModifiablePivot>(
+        router: Router,
+        controller: CrudSiblingsController<ChildType, ParentType, ThroughType>,
+        path: [PathComponentsRepresentable],
+        idPath: [PathComponentsRepresentable]
+    ) where ThroughType.Left == ChildType,
+        ThroughType.Right == ParentType {
+            switch self {
+            case .read:
+                router.get(idPath, use: controller.index)
+            case .readAll:
+                router.get(path, use: controller.indexAll)
+            case .create:
+                router.post(path, use: controller.create)
+            case .update:
+                router.put(idPath, use: controller.update)
+            case .delete:
+                router.delete(idPath, use: controller.delete)
+            }
+    }
+}
+
+public enum SiblingRouterMethods {
+    case read
+    case readAll
+    case update
+
+    func register<ChildType, ParentType, ThroughType: ModifiablePivot>(
+        router: Router,
+        controller: CrudSiblingsController<ChildType, ParentType, ThroughType>,
+        path: [PathComponentsRepresentable],
+        idPath: [PathComponentsRepresentable]
+    ) {
+            switch self {
+            case .read:
+                router.get(idPath, use: controller.index)
+            case .readAll:
+                router.get(path, use: controller.indexAll)
+            case .update:
+                router.put(idPath, use: controller.update)
+            }
+    }
+}
+
 public protocol CrudSiblingsControllerProtocol {
     associatedtype ParentType: Model & Content where ParentType.ID: Parameter
     associatedtype ChildType: Model & Content where ChildType.ID: Parameter, ChildType.Database == ParentType.Database
@@ -9,7 +81,7 @@ public protocol CrudSiblingsControllerProtocol {
         ChildType.Database == ThroughType.Database
 
     var siblings: KeyPath<ParentType, Siblings<ParentType, ChildType, ThroughType>> { get }
-    
+
     func index(_ req: Request) throws -> Future<ChildType>
     func indexAll(_ req: Request) throws -> Future<[ChildType]>
     func update(_ req: Request) throws -> Future<ChildType>
@@ -17,8 +89,8 @@ public protocol CrudSiblingsControllerProtocol {
 
 public extension CrudSiblingsControllerProtocol {
     func index(_ req: Request) throws -> Future<ChildType> {
-        let parentId: ParentType.ID = try getId(from: req)
-        let childId: ChildType.ID = try getId(from: req)
+        let parentId: ParentType.ID = try req.getId()
+        let childId: ChildType.ID = try req.getId()
 
         return ParentType.find(parentId, on: req).unwrap(or: Abort(.notFound)).flatMap { parent -> Future<ChildType> in
 
@@ -31,7 +103,7 @@ public extension CrudSiblingsControllerProtocol {
     }
 
     func indexAll(_ req: Request) throws -> Future<[ChildType]> {
-        let parentId: ParentType.ID = try getId(from: req)
+        let parentId: ParentType.ID = try req.getId()
 
         return ParentType.find(parentId, on: req).unwrap(or: Abort(.notFound)).flatMap { parent -> Future<[ChildType]> in
             let siblingsRelation = parent[keyPath: self.siblings]
@@ -42,8 +114,8 @@ public extension CrudSiblingsControllerProtocol {
     }
 
     func update(_ req: Request) throws -> Future<ChildType> {
-        let parentId: ParentType.ID = try getId(from: req)
-        let childId: ChildType.ID = try getId(from: req)
+        let parentId: ParentType.ID = try req.getId()
+        let childId: ChildType.ID = try req.getId()
 
         return ParentType
             .find(parentId, on: req)
@@ -67,7 +139,7 @@ public extension CrudSiblingsControllerProtocol {
 public extension CrudSiblingsControllerProtocol where ThroughType.Left == ParentType,
 ThroughType.Right == ChildType {
     func create(_ req: Request) throws -> Future<ChildType> {
-        let parentId: ParentType.ID = try getId(from: req)
+        let parentId: ParentType.ID = try req.getId()
 
         return ParentType.find(parentId, on: req).unwrap(or: Abort(.notFound)).flatMap { parent -> Future<ChildType> in
 
@@ -79,8 +151,8 @@ ThroughType.Right == ChildType {
     }
 
     func delete(_ req: Request) throws -> Future<HTTPStatus> {
-        let parentId: ParentType.ID = try getId(from: req)
-        let childId: ChildType.ID = try getId(from: req)
+        let parentId: ParentType.ID = try req.getId()
+        let childId: ChildType.ID = try req.getId()
 
         return ParentType
             .find(parentId, on: req)
@@ -102,7 +174,7 @@ ThroughType.Right == ChildType {
 public extension CrudSiblingsControllerProtocol where ThroughType.Right == ParentType,
 ThroughType.Left == ChildType {
     func create(_ req: Request) throws -> Future<ChildType> {
-        let parentId: ParentType.ID = try getId(from: req)
+        let parentId: ParentType.ID = try req.getId()
 
         return ParentType.find(parentId, on: req).unwrap(or: Abort(.notFound)).flatMap { parent -> Future<ChildType> in
 
@@ -116,8 +188,8 @@ ThroughType.Left == ChildType {
     }
 
     func delete(_ req: Request) throws -> Future<HTTPStatus> {
-        let parentId: ParentType.ID = try getId(from: req)
-        let childId: ChildType.ID = try getId(from: req)
+        let parentId: ParentType.ID = try req.getId()
+        let childId: ChildType.ID = try req.getId()
 
         return ParentType
             .find(parentId, on: req)
@@ -135,20 +207,12 @@ ThroughType.Left == ChildType {
     }
 }
 
-fileprivate extension CrudSiblingsControllerProtocol {
-    func getId<T: ID & Parameter>(from req: Request) throws -> T {
-        guard let id = try req.parameters.next(T.self) as? T else { fatalError() }
-
-        return id
-    }
-}
-
 public struct CrudSiblingsController<ChildT: Model & Content, ParentT: Model & Content, ThroughT: ModifiablePivot>: CrudSiblingsControllerProtocol where
     ChildT.ID: Parameter,
     ParentT.ID: Parameter,
     ChildT.Database == ParentT.Database,
     ThroughT.Database: JoinSupporting,
-ThroughT.Database == ChildT.Database {
+    ThroughT.Database == ChildT.Database {
 
     public typealias ThroughType = ThroughT
     public typealias ParentType = ParentT
@@ -157,20 +221,20 @@ ThroughT.Database == ChildT.Database {
     public var siblings: KeyPath<ParentType, Siblings<ParentType, ChildType, ThroughType>>
     let basePath: [PathComponentsRepresentable]
     let path: [PathComponentsRepresentable]
+    let activeMethods: Set<ModifiableSiblingRouterMethods>
 
     init(
         siblingRelation: KeyPath<ParentType, Siblings<ParentType, ChildType, ThroughType>>,
         basePath: [PathComponentsRepresentable],
-        path: [PathComponentsRepresentable]
+        path: [PathComponentsRepresentable],
+        activeMethods: Set<ModifiableSiblingRouterMethods>
     ) {
-        let path
-            = path.count == 0
-                ? [String(describing: ChildType.self).snakeCased()! as PathComponentsRepresentable]
-                : path
+        let path = path.adjustedPath(for: ChildType.self)
 
         self.siblings = siblingRelation
         self.basePath = basePath
         self.path = path
+        self.activeMethods = activeMethods
     }
 }
 
@@ -182,11 +246,14 @@ ThroughType.Left == ChildType {
         let parentPath = self.basePath.appending(self.path)
         let parentIdPath = self.basePath.appending(self.path).appending(ParentType.ID.parameter)
 
-        router.get(parentIdPath, use: self.index)
-        router.get(parentPath, use: self.indexAll)
-        router.post(parentPath, use: self.create)
-        router.put(parentIdPath, use: self.update)
-        router.delete(parentIdPath, use: self.delete)
+        self.activeMethods.forEach {
+            $0.register(
+                router: router,
+                controller: self,
+                path: parentPath,
+                idPath: parentIdPath
+            )
+        }
     }
 }
 
@@ -196,11 +263,14 @@ ThroughType.Right == ChildType {
         let parentPath = self.basePath.appending(self.path)
         let parentIdPath = self.basePath.appending(self.path).appending(ParentType.ID.parameter)
 
-        router.get(parentIdPath, use: self.index)
-        router.get(parentPath, use: self.indexAll)
-        router.post(parentPath, use: self.create)
-        router.put(parentIdPath, use: self.update)
-        router.delete(parentIdPath, use: self.delete)
+        self.activeMethods.forEach {
+            $0.register(
+                router: router,
+                controller: self,
+                path: parentPath,
+                idPath: parentIdPath
+            )
+        }
     }
 }
 

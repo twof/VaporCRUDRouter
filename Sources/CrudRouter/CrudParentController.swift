@@ -14,7 +14,7 @@ public protocol CrudParentControllerProtocol {
 public extension CrudParentControllerProtocol {
 
     func index(_ req: Request) throws -> Future<ParentType> {
-        let childId: ChildType.ID = try getId(from: req)
+        let childId: ChildType.ID = try req.getId()
 
         return ChildType.find(childId, on: req).unwrap(or: Abort(.notFound)).flatMap { child in
             child[keyPath: self.relation].get(on: req)
@@ -22,7 +22,7 @@ public extension CrudParentControllerProtocol {
     }
 
     func update(_ req: Request) throws -> Future<ParentType> {
-        let childId: ChildType.ID = try getId(from: req)
+        let childId: ChildType.ID = try req.getId()
 
         return ChildType
             .find(childId, on: req)
@@ -30,14 +30,6 @@ public extension CrudParentControllerProtocol {
             .flatMap { child in
                 return child[keyPath: self.relation].get(on: req)
         }
-    }
-}
-
-fileprivate extension CrudParentControllerProtocol {
-    func getId<T: ID & Parameter>(from req: Request) throws -> T {
-        guard let id = try req.parameters.next(T.self) as? T else { fatalError() }
-
-        return id
     }
 }
 
@@ -50,26 +42,17 @@ public struct CrudParentController<ChildT: Model & Content, ParentT: Model & Con
     let path: [PathComponentsRepresentable]
 
     init(relation: KeyPath<ChildType, Parent<ChildType, ParentType>>, basePath: [PathComponentsRepresentable], path: [PathComponentsRepresentable]) {
-        let path
-            = path.count == 0
-                ? [String(describing: ParentType.self).snakeCased()! as PathComponentsRepresentable]
-                : path
+        let adjustedPath = path.adjustedPath(for: ParentType.self)
 
         self.relation = relation
         self.basePath = basePath
-        self.path = path
+        self.path = adjustedPath
     }
 }
 
 extension CrudParentController: RouteCollection {
     public func boot(router: Router) throws {
-
-        let parentString
-            = self.path.count == 0
-                ? [String(describing: ParentType.self).snakeCased()! as PathComponentsRepresentable]
-                : self.path
-
-        let parentPath = self.basePath.appending(parentString)
+        let parentPath = self.basePath.appending(self.path)
 
         router.get(parentPath, use: self.index)
         router.put(parentPath, use: self.update)

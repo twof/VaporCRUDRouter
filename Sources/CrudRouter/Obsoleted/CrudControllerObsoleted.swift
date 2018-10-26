@@ -34,7 +34,7 @@ extension CrudController {
         ChildType.ID: Parameter {
             let baseIdPath = self.path.appending(ModelType.ID.parameter)
 
-            let controller = CrudChildrenController(childrenRelation: relation, basePath: baseIdPath, path: path)
+            let controller = CrudChildrenController(childrenRelation: relation, basePath: baseIdPath, path: path, activeMethods: Set())
 
             try controller.boot(router: self.router)
     }

@@ -1,6 +1,34 @@
 import Vapor
 import Fluent
 
+public enum ChildrenRouterMethods {
+    case read
+    case readAll
+    case create
+    case update
+    case delete
+
+    func register<ChildType, ParentType>(
+        router: Router,
+        controller: CrudChildrenController<ChildType, ParentType>,
+        path: [PathComponentsRepresentable],
+        idPath: [PathComponentsRepresentable]
+    ) {
+        switch self {
+        case .read:
+            router.get(idPath, use: controller.index)
+        case .readAll:
+            router.get(path, use: controller.indexAll)
+        case .create:
+            router.post(path, use: controller.create)
+        case .update:
+            router.put(idPath, use: controller.update)
+        case .delete:
+            router.delete(idPath, use: controller.delete)
+        }
+    }
+}
+
 public protocol CrudChildrenControllerProtocol {
     associatedtype ParentType: Model & Content where ParentType.ID: Parameter
     associatedtype ChildType: Model & Content where ChildType.ID: Parameter, ChildType.Database == ParentType.Database
@@ -16,8 +44,8 @@ public protocol CrudChildrenControllerProtocol {
 
 public extension CrudChildrenControllerProtocol {
     func index(_ req: Request) throws -> Future<ChildType> {
-        let parentId: ParentType.ID = try getId(from: req)
-        let childId: ChildType.ID = try getId(from: req)
+        let parentId: ParentType.ID = try req.getId()
+        let childId: ChildType.ID = try req.getId()
 
         return ParentType.find(parentId, on: req).unwrap(or: Abort(.notFound)).flatMap { parent -> Future<ChildType> in
 
@@ -30,7 +58,7 @@ public extension CrudChildrenControllerProtocol {
     }
 
     func indexAll(_ req: Request) throws -> Future<[ChildType]> {
-        let parentId: ParentType.ID = try getId(from: req)
+        let parentId: ParentType.ID = try req.getId()
 
         return ParentType.find(parentId, on: req).unwrap(or: Abort(.notFound)).flatMap { parent -> Future<[ChildType]> in
 
@@ -41,7 +69,7 @@ public extension CrudChildrenControllerProtocol {
     }
 
     func create(_ req: Request) throws -> Future<ChildType> {
-        let parentId: ParentType.ID = try getId(from: req)
+        let parentId: ParentType.ID = try req.getId()
 
         return ParentType.find(parentId, on: req).unwrap(or: Abort(.notFound)).flatMap { parent -> Future<ChildType> in
 
@@ -52,8 +80,8 @@ public extension CrudChildrenControllerProtocol {
     }
 
     func update(_ req: Request) throws -> Future<ChildType> {
-        let parentId: ParentType.ID = try getId(from: req)
-        let childId: ChildType.ID = try getId(from: req)
+        let parentId: ParentType.ID = try req.getId()
+        let childId: ChildType.ID = try req.getId()
 
         return ParentType
             .find(parentId, on: req)
@@ -74,8 +102,8 @@ public extension CrudChildrenControllerProtocol {
     }
 
     func delete(_ req: Request) throws -> Future<HTTPStatus> {
-        let parentId: ParentType.ID = try getId(from: req)
-        let childId: ChildType.ID = try getId(from: req)
+        let parentId: ParentType.ID = try req.getId()
+        let childId: ChildType.ID = try req.getId()
 
         return ParentType
             .find(parentId, on: req)
@@ -92,14 +120,6 @@ public extension CrudChildrenControllerProtocol {
     }
 }
 
-fileprivate extension CrudChildrenControllerProtocol {
-    func getId<T: ID & Parameter>(from req: Request) throws -> T {
-        guard let id = try req.parameters.next(T.self) as? T else { fatalError() }
-
-        return id
-    }
-}
-
 public struct CrudChildrenController<ChildT: Model & Content, ParentT: Model & Content>: CrudChildrenControllerProtocol where ChildT.ID: Parameter, ParentT.ID: Parameter, ChildT.Database == ParentT.Database {
     public typealias ParentType = ParentT
     public typealias ChildType = ChildT
@@ -107,34 +127,36 @@ public struct CrudChildrenController<ChildT: Model & Content, ParentT: Model & C
     public var children: KeyPath<ParentT, Children<ParentT, ChildT>>
     let basePath: [PathComponentsRepresentable]
     let path: [PathComponentsRepresentable]
+    let activeMethods: Set<ChildrenRouterMethods>
 
-    init(childrenRelation: KeyPath<ParentT, Children<ParentT, ChildT>>, basePath: [PathComponentsRepresentable], path: [PathComponentsRepresentable]) {
-        let path
-            = path.count == 0
-                ? [String(describing: ChildType.self).snakeCased()! as PathComponentsRepresentable]
-                : path
+    init(
+        childrenRelation: KeyPath<ParentT,
+        Children<ParentT, ChildT>>,
+        basePath: [PathComponentsRepresentable],
+        path: [PathComponentsRepresentable],
+        activeMethods: Set<ChildrenRouterMethods>
+    ) {
+        let adjustedPath = path.adjustedPath(for: ChildType.self)
 
         self.children = childrenRelation
         self.basePath = basePath
-        self.path = path
+        self.path = adjustedPath
+        self.activeMethods = activeMethods
     }
 }
 
 extension CrudChildrenController: RouteCollection {
     public func boot(router: Router) throws {
+        let parentPath = self.basePath.appending(self.path)
+        let parentIdPath = self.basePath.appending(self.path).appending(ParentType.ID.parameter)
 
-        let parentString
-            = self.path.count == 0
-                ? [String(describing: ParentType.self).snakeCased()! as PathComponentsRepresentable]
-                : self.path
-
-        let parentPath = self.basePath.appending(parentString)
-        let parentIdPath = self.basePath.appending(parentString).appending(ParentType.ID.parameter)
-
-        router.get(parentIdPath, use: self.index)
-        router.get(parentPath, use: self.indexAll)
-        router.post(parentPath, use: self.create)
-        router.put(parentIdPath, use: self.update)
-        router.delete(parentIdPath, use: self.delete)
+        self.activeMethods.forEach {
+            $0.register(
+                router: router,
+                controller: self,
+                path: parentPath,
+                idPath: parentIdPath
+            )
+        }
     }
 }
