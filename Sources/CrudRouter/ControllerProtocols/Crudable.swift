@@ -8,8 +8,8 @@ public protocol Crudable: ControllerProtocol {
         at path: PathComponentsRepresentable...,
         parent relation: KeyPath<ChildType, Parent<ChildType, ParentType>>,
         _ either: OnlyExceptEither<ParentRouterMethod>,
-        relationConfiguration: ((CrudParentController<ChildType, ParentType>) throws -> Void)?
-    ) throws where
+        relationConfiguration: ((CrudParentController<ChildType, ParentType>) -> Void)?
+    ) where
         ParentType: Model & Content,
         ChildType.Database == ParentType.Database,
         ParentType.ID: Parameter
@@ -18,8 +18,8 @@ public protocol Crudable: ControllerProtocol {
         at path: PathComponentsRepresentable...,
         children relation: KeyPath<ChildType, Children<ChildType, ChildChildType>>,
         _ either: OnlyExceptEither<ChildrenRouterMethod>,
-        relationConfiguration: ((CrudChildrenController<ChildChildType, ChildType>) throws -> Void)?
-    ) throws where
+        relationConfiguration: ((CrudChildrenController<ChildChildType, ChildType>) -> Void)?
+    ) where
         ChildChildType: Model & Content,
         ChildType.Database == ChildChildType.Database,
         ChildChildType.ID: Parameter
@@ -28,8 +28,8 @@ public protocol Crudable: ControllerProtocol {
         at path: PathComponentsRepresentable...,
         siblings relation: KeyPath<ChildType, Siblings<ChildType, ChildChildType, ThroughType>>,
         _ either: OnlyExceptEither<ModifiableSiblingRouterMethod>,
-        relationConfiguration: ((CrudSiblingsController<ChildChildType, ChildType, ThroughType>) throws -> Void)?
-    ) throws where
+        relationConfiguration: ((CrudSiblingsController<ChildChildType, ChildType, ThroughType>) -> Void)?
+    ) where
         ChildChildType: Content,
         ChildType.Database == ThroughType.Database,
         ChildChildType.ID: Parameter,
@@ -43,8 +43,8 @@ public protocol Crudable: ControllerProtocol {
         at path: PathComponentsRepresentable...,
         siblings relation: KeyPath<ChildType, Siblings<ChildType, ChildChildType, ThroughType>>,
         _ either: OnlyExceptEither<ModifiableSiblingRouterMethod>,
-        relationConfiguration: ((CrudSiblingsController<ChildChildType, ChildType, ThroughType>) throws -> Void)?
-    ) throws where
+        relationConfiguration: ((CrudSiblingsController<ChildChildType, ChildType, ThroughType>) -> Void)?
+    ) where
         ChildChildType: Content,
         ChildType.Database == ThroughType.Database,
         ChildChildType.ID: Parameter,
@@ -60,8 +60,8 @@ extension Crudable {
         at path: PathComponentsRepresentable...,
         parent relation: KeyPath<ChildType, Parent<ChildType, ParentType>>,
         _ either: OnlyExceptEither<ParentRouterMethod> = .only([.read, .update]),
-        relationConfiguration: ((CrudParentController<ChildType, ParentType>) throws -> Void)?=nil
-    ) throws where
+        relationConfiguration: ((CrudParentController<ChildType, ParentType>) -> Void)?=nil
+    ) where
         ParentType: Model & Content,
         ChildType.Database == ParentType.Database,
         ParentType.ID: Parameter {
@@ -81,17 +81,17 @@ extension Crudable {
                 controller = CrudParentController(relation: relation, path: fullPath, router: self.router, activeMethods: allMethods.subtracting(Set(methods)))
             }
 
-            try controller.boot(router: self.router)
+            do { try controller.boot(router: self.router) } catch { fatalError("I have no reason to expect boot to throw") }
 
-            try relationConfiguration?(controller)
+            relationConfiguration?(controller)
     }
 
     public func crud<ChildChildType>(
         at path: PathComponentsRepresentable...,
         children relation: KeyPath<ChildType, Children<ChildType, ChildChildType>>,
         _ either: OnlyExceptEither<ChildrenRouterMethod> = .only([.read, .readAll, .create, .update, .delete]),
-        relationConfiguration: ((CrudChildrenController<ChildChildType, ChildType>) throws -> Void)?=nil
-    ) throws where
+        relationConfiguration: ((CrudChildrenController<ChildChildType, ChildType>) -> Void)?=nil
+    ) where
         ChildChildType: Model & Content,
         ChildType.Database == ChildChildType.Database,
         ChildChildType.ID: Parameter {
@@ -110,17 +110,17 @@ extension Crudable {
                 controller = CrudChildrenController<ChildChildType, ChildType>(childrenRelation: relation, path: fullPath, router: self.router, activeMethods: allMethods.subtracting(Set(methods)))
             }
 
-            try controller.boot(router: self.router)
+            do { try controller.boot(router: self.router) } catch { fatalError("I have no reason to expect boot to throw") }
 
-            try relationConfiguration?(controller)
+            relationConfiguration?(controller)
     }
 
     public func crud<ChildChildType, ThroughType>(
         at path: PathComponentsRepresentable...,
         siblings relation: KeyPath<ChildType, Siblings<ChildType, ChildChildType, ThroughType>>,
         _ either: OnlyExceptEither<ModifiableSiblingRouterMethod> = .only([.read, .readAll, .create, .update, .delete]),
-        relationConfiguration: ((CrudSiblingsController<ChildChildType, ChildType, ThroughType>) throws -> Void)?=nil
-    ) throws where
+        relationConfiguration: ((CrudSiblingsController<ChildChildType, ChildType, ThroughType>) -> Void)?=nil
+    ) where
         ChildChildType: Content,
         ChildType.Database == ThroughType.Database,
         ChildChildType.ID: Parameter,
@@ -145,17 +145,17 @@ extension Crudable {
                 controller = CrudSiblingsController<ChildChildType, ChildType, ThroughType>(siblingRelation: relation, path: fullPath, router: self.router, activeMethods: allMethods.subtracting(Set(methods)))
             }
 
-            try controller.boot(router: self.router)
+             do { try controller.boot(router: self.router) } catch { fatalError("I have no reason to expect boot to throw") }
 
-            try relationConfiguration?(controller)
+            relationConfiguration?(controller)
     }
 
     public func crud<ChildChildType, ThroughType>(
         at path: PathComponentsRepresentable...,
         siblings relation: KeyPath<ChildType, Siblings<ChildType, ChildChildType, ThroughType>>,
         _ either: OnlyExceptEither<ModifiableSiblingRouterMethod> = .only([.read, .readAll, .create, .update, .delete]),
-        relationConfiguration: ((CrudSiblingsController<ChildChildType, ChildType, ThroughType>) throws -> Void)?=nil
-    ) throws where
+        relationConfiguration: ((CrudSiblingsController<ChildChildType, ChildType, ThroughType>) -> Void)?=nil
+    ) where
         ChildChildType: Content,
         ChildType.Database == ThroughType.Database,
         ChildChildType.ID: Parameter,
@@ -179,8 +179,8 @@ extension Crudable {
                 controller = CrudSiblingsController<ChildChildType, ChildType, ThroughType>(siblingRelation: relation, path: fullPath, router: self.router, activeMethods: allMethods.subtracting(Set(methods)))
             }
 
-            try controller.boot(router: self.router)
+            do { try controller.boot(router: self.router) } catch { fatalError("I have no reason to expect boot to throw") }
 
-            try relationConfiguration?(controller)
+            relationConfiguration?(controller)
     }
 }

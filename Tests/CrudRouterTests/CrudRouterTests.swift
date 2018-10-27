@@ -89,15 +89,15 @@ func configure(_ config: inout Config, _ env: inout Environment, _ services: ino
 }
 
 func routes(_ router: Router) throws {
-    try router.crud(register: Galaxy.self) { controller in
-        try controller.crud(children: \.planets)
+    router.crud(register: Galaxy.self) { controller in
+        controller.crud(children: \.planets)
     }
-    try router.crud(register: Planet.self) { controller in
-        try controller.crud(parent: \.galaxy)
-        try controller.crud(siblings: \.tags)
+    router.crud(register: Planet.self) { controller in
+        controller.crud(parent: \.galaxy)
+        controller.crud(siblings: \.tags)
     }
-    try router.crud(register: Tag.self) { controller in
-        try controller.crud(siblings: \.planets)
+    router.crud(register: Tag.self) { controller in
+        controller.crud(siblings: \.planets)
     }
 }
 
@@ -165,7 +165,7 @@ final class CrudRouterTests: XCTestCase {
     func testBaseCrudRegistrationWithRouteName() throws {
         let router = EngineRouter.default()
 
-        try router.crud("planets", register: Planet.self)
+        router.crud("planets", register: Planet.self)
 
         XCTAssert(router.routes.isEmpty == false)
         XCTAssert(router.routes.count == 5)
@@ -181,7 +181,7 @@ final class CrudRouterTests: XCTestCase {
     func testBaseCrudRegistrationWithDefaultRoute() throws {
         let router = EngineRouter.default()
 
-        try router.crud(register: Planet.self)
+        router.crud(register: Planet.self)
 
         XCTAssert(router.routes.isEmpty == false)
         XCTAssert(router.routes.count == 5)
