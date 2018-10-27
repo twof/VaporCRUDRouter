@@ -1,7 +1,7 @@
 import Vapor
 import Fluent
 
-public protocol CrudControllerProtocol {
+public protocol CrudControllerProtocol: Crudable {
     associatedtype ModelType: Model, Content where ModelType.ID: Parameter
     func indexAll(_ req: Request) throws -> Future<[ModelType]>
     func index(_ req: Request) throws -> Future<ModelType>
