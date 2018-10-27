@@ -6,8 +6,8 @@ public extension Router {
         _ path: PathComponentsRepresentable...,
         register type: ModelType.Type,
         _ either: OnlyExceptEither<RouterMethod> = .only([.read, .readAll, .create, .update, .delete]),
-        relationConfiguration: ((CrudController<ModelType>) throws -> ())?=nil
-    ) throws where ModelType.ID: Parameter {
+        relationConfiguration: ((CrudController<ModelType>) -> ())?=nil
+    ) where ModelType.ID: Parameter {
         let allMethods: Set<RouterMethod> = Set([.read, .readAll, .create, .update, .delete])
         let controller: CrudController<ModelType>
 
@@ -18,8 +18,8 @@ public extension Router {
             controller = CrudController<ModelType>(path: path, router: self, activeMethods: allMethods.subtracting(Set(methods)))
         }
 
-        try controller.boot(router: self)
+        do { try controller.boot(router: self) } catch { fatalError("I have no reason to expect boot to throw") }
 
-        try relationConfiguration?(controller)
+        relationConfiguration?(controller)
     }
 }
