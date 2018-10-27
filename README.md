@@ -123,9 +123,8 @@ GET /todo/:id/tag/:id
 - query parameter support
 - PATCH support
 - more fine grained response statuses
-- recursive relation configuration
 - automatically expose relations (blocked by lack of Swift reflection support)
 - documentation for all public functions
 - generate models and rest routes via console command
-- Publicable support
+- Publicable support ([potentially blocked by a compiler bug](https://forums.swift.org/t/how-to-select-different-associated-type-based-on-type-constraints/17214))
 - Fine grained per route public return models
