@@ -6,6 +6,12 @@ public extension Array {
         temp.append(element)
         return temp
     }
+
+    public func appending(_ elements: Array<Element>) -> Array<Element> {
+        var temp = self
+        temp.append(contentsOf: elements)
+        return temp
+    }
 }
 
 extension Array where Element == PathComponentsRepresentable {
