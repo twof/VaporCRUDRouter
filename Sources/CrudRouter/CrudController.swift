@@ -62,9 +62,9 @@ extension CrudController {
 
             switch either {
             case .only(let methods):
-                controller = CrudChildrenController(childrenRelation: relation, basePath: baseIdPath, path: path, activeMethods: Set(methods))
+                controller = CrudChildrenController(childrenRelation: relation, basePath: baseIdPath, path: path, router: self.router, activeMethods: Set(methods))
             case .except(let methods):
-                controller = CrudChildrenController(childrenRelation: relation, basePath: baseIdPath, path: path, activeMethods: allMethods.subtracting(Set(methods)))
+                controller = CrudChildrenController(childrenRelation: relation, basePath: baseIdPath, path: path, router: self.router, activeMethods: allMethods.subtracting(Set(methods)))
             }
 
             try controller.boot(router: self.router)
