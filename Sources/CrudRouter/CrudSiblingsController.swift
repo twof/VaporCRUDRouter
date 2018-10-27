@@ -13,18 +13,15 @@ public struct CrudSiblingsController<ChildT: Model & Content, ParentT: Model & C
     public typealias ChildType = ChildT
 
     public var siblings: KeyPath<ParentType, Siblings<ParentType, ChildType, ThroughType>>
-//    let basePath: [PathComponentsRepresentable]
     let path: [PathComponentsRepresentable]
     let activeMethods: Set<ModifiableSiblingRouterMethod>
 
     init(
         siblingRelation: KeyPath<ParentType, Siblings<ParentType, ChildType, ThroughType>>,
-//        basePath: [PathComponentsRepresentable],
         path: [PathComponentsRepresentable],
         activeMethods: Set<ModifiableSiblingRouterMethod>
     ) {
         self.siblings = siblingRelation
-//        self.basePath = basePath
         self.path = path
         self.activeMethods = activeMethods
     }

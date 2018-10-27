@@ -6,20 +6,17 @@ public struct CrudChildrenController<ChildT: Model & Content, ParentT: Model & C
     public typealias ChildType = ChildT
 
     public var children: KeyPath<ParentT, Children<ParentT, ChildT>>
-//    let basePath: [PathComponentsRepresentable]
     let path: [PathComponentsRepresentable]
     let router: Router
     let activeMethods: Set<ChildrenRouterMethod>
 
     init(
         childrenRelation: KeyPath<ParentT, Children<ParentT, ChildT>>,
-//        basePath: [PathComponentsRepresentable],
         path: [PathComponentsRepresentable],
         router: Router,
         activeMethods: Set<ChildrenRouterMethod>
     ) {
         self.children = childrenRelation
-//        self.basePath = basePath
         self.path = path
         self.router = router
         self.activeMethods = activeMethods
@@ -37,15 +34,19 @@ extension CrudChildrenController {
         ChildType.Database == ParentType.Database,
         ParentType.ID: Parameter {
             let baseIdPath = self.path.appending(ChildType.ID.parameter)
+            let adjustedPath = path.adjustedPath(for: ParentType.self)
+
+            let fullPath = baseIdPath.appending(adjustedPath)
+
 
             let allMethods: Set<ParentRouterMethod> = Set([.read, .update])
             let controller: CrudParentController<ChildType, ParentType>
 
             switch either {
             case .only(let methods):
-                controller = CrudParentController(relation: relation, basePath: baseIdPath, path: path, activeMethods: Set(methods))
+                controller = CrudParentController(relation: relation, path: fullPath, activeMethods: Set(methods))
             case .except(let methods):
-                controller = CrudParentController(relation: relation, basePath: baseIdPath, path: path, activeMethods: allMethods.subtracting(Set(methods)))
+                controller = CrudParentController(relation: relation, path: fullPath, activeMethods: allMethods.subtracting(Set(methods)))
             }
 
             try controller.boot(router: self.router)

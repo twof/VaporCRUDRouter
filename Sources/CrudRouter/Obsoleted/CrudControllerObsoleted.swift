@@ -12,11 +12,7 @@ extension CrudController {
         ParentType: Model & Content,
         ModelType.Database == ParentType.Database,
         ParentType.ID: Parameter {
-            let baseIdPath = self.path.appending(ModelType.ID.parameter)
-
-            let controller = CrudParentController(relation: relation, basePath: baseIdPath, path: path, activeMethods: Set())
-
-            try controller.boot(router: self.router)
+            fatalError()
     }
 }
 
