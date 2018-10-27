@@ -71,8 +71,8 @@ DELETE  /account/:id
 Say you had a model `User`, which was the parent of another model `Todo`. If you'd like routes to expose all `Todo`s that belong to a specific `User`, you can do something like this.
 
 ```swift
-try router.crud(register: User.self) { controller in
-    try controller.crud(children: \.todos)
+router.crud(register: User.self) { controller in
+    controller.crud(children: \.todos)
 }
 ```
 
@@ -95,17 +95,17 @@ DELETE  /user/:id/todo/:id  // deletes the Todo with :id belonging to the User w
 within the supplied closure, you can also expose routes for related `Parent`s and `Sibling`s
 
 ```swift
-try controller.crud(children: \.todos)
-try controller.crud(parent: \.todos)
-try controller.crud(siblings: \.todos)
+controller.crud(children: \.todos)
+controller.crud(parent: \.todos)
+controller.crud(siblings: \.todos)
 ```
 
 #### Including or Excluding Specific Routes
 If you'd like to register a `Model`, but you don't want every route to be available, you can specify the ones you want, or exclude the ones you don't.
 
 ```swift
-try router.crud(register: Todo.self, .except([.create, .delete])) { controller in
-    try controller.crud(parent: \.owner, .only([.read]))
+router.crud(register: Todo.self, .except([.create, .delete])) { controller in
+    controller.crud(parent: \.owner, .only([.read]))
 }
 ```
 
