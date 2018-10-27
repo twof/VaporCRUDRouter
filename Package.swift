@@ -18,16 +18,16 @@ let package = Package(
         .package(url: "https://github.com/vapor/vapor.git", .upToNextMajor(from: "3.0.0")),
 
         // 🔵 Swift ORM (queries, models, relations, etc) built on SQLite 3.
-        .package(url: "https://github.com/vapor/fluent.git", .upToNextMajor(from: "3.0.0"))
+        .package(url: "https://github.com/vapor/fluent-sqlite.git", .upToNextMajor(from: "3.0.0")),
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
         // Targets can depend on other targets in this package, and on products in packages which this package depends on.
         .target(
             name: "CrudRouter",
-            dependencies: ["Fluent", "Vapor"]),
+            dependencies: ["FluentSQLite", "Vapor"]),
         .testTarget(
             name: "CrudRouterTests",
-            dependencies: ["CrudRouter"]),
+            dependencies: ["CrudRouter", "FluentSQLite"]),
     ]
 )
