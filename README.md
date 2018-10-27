@@ -85,11 +85,11 @@ POST    /user
 PUT     /user/:id
 DELETE  /user/:id
 
-GET     /user/:id/todo
-GET     /user/:id/todo/:id
-POST    /user/:id/todo
-PUT     /user/:id/todo/:id
-DELETE  /user/:id/todo/:id
+GET     /user/:id/todo      // returns all Todos belonging to the User with :id
+GET     /user/:id/todo/:id  // returns the Todo with :id belonging to the User with :id
+POST    /user/:id/todo      // creates a new Todo belonging to the User with :id
+PUT     /user/:id/todo/:id  // updates the Todo with :id belonging to the User with :id
+DELETE  /user/:id/todo/:id  // deletes the Todo with :id belonging to the User with :id
 ```
 
 within the supplied closure, you can also expose routes for related `Parent`s and `Sibling`s
@@ -112,11 +112,11 @@ try router.crud(register: Todo.self, .except([.create, .delete])) { controller i
 results in
 
 ```
-PUT /todo/int
-GET /todo/int
+PUT /todo/:id
+GET /todo/:id
 GET /todo
 
-GET /todo/int/tag/int
+GET /todo/:id/tag/:id
 ```
 
 ### Future features
