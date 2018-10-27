@@ -52,11 +52,7 @@ public extension CrudController {
         ThroughType.Database == ChildType.Database,
         ThroughType.Left == ModelType,
         ThroughType.Right == ChildType {
-            let baseIdPath = self.path.appending(ModelType.ID.parameter)
-
-            let controller = CrudSiblingsController(siblingRelation: relation, basePath: baseIdPath, path: path, activeMethods: Set())
-
-            try controller.boot(router: self.router)
+            fatalError()
     }
 
     @available(swift, obsoleted: 4.0, renamed: "crud(at:siblings:relationConfiguration:)")
@@ -73,10 +69,6 @@ public extension CrudController {
         ThroughType.Database == ChildType.Database,
         ThroughType.Right == ModelType,
         ThroughType.Left == ChildType {
-            let baseIdPath = self.path.appending(ModelType.ID.parameter)
-
-            let controller = CrudSiblingsController(siblingRelation: relation, basePath: baseIdPath, path: path, activeMethods: Set())
-
-            try controller.boot(router: self.router)
+            fatalError()
     }
 }

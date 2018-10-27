@@ -28,6 +28,9 @@ extension CrudController {
         ModelType.Database == ParentType.Database,
         ParentType.ID: Parameter {
             let baseIdPath = self.path.appending(ModelType.ID.parameter)
+            let adjustedPath = path.adjustedPath(for: ParentType.self)
+
+            let fullPath = baseIdPath.appending(adjustedPath)
 
             let allMethods: Set<ParentRouterMethod> = Set([.read, .update])
             let controller: CrudParentController<ModelType, ParentType>
@@ -56,15 +59,18 @@ extension CrudController {
         ModelType.Database == ChildType.Database,
         ChildType.ID: Parameter {
             let baseIdPath = self.path.appending(ModelType.ID.parameter)
+            let adjustedPath = path.adjustedPath(for: ChildType.self)
+
+            let fullPath = baseIdPath.appending(adjustedPath)
 
             let allMethods: Set<ChildrenRouterMethod> = Set([.read, .update])
             let controller: CrudChildrenController<ChildType, ModelType>
 
             switch either {
             case .only(let methods):
-                controller = CrudChildrenController(childrenRelation: relation, basePath: baseIdPath, path: path, router: self.router, activeMethods: Set(methods))
+                controller = CrudChildrenController(childrenRelation: relation, path: fullPath, router: self.router, activeMethods: Set(methods))
             case .except(let methods):
-                controller = CrudChildrenController(childrenRelation: relation, basePath: baseIdPath, path: path, router: self.router, activeMethods: allMethods.subtracting(Set(methods)))
+                controller = CrudChildrenController(childrenRelation: relation, path: fullPath, router: self.router, activeMethods: allMethods.subtracting(Set(methods)))
             }
 
             try controller.boot(router: self.router)
@@ -90,15 +96,18 @@ public extension CrudController {
         ThroughType.Left == ModelType,
         ThroughType.Right == ChildType {
             let baseIdPath = self.path.appending(ModelType.ID.parameter)
+            let adjustedPath = path.adjustedPath(for: ChildType.self)
+
+            let fullPath = baseIdPath.appending(adjustedPath)
 
             let allMethods: Set<ModifiableSiblingRouterMethod> = Set([.read, .readAll, .create, .update, .delete])
             let controller: CrudSiblingsController<ChildType, ModelType, ThroughType>
 
             switch either {
             case .only(let methods):
-                controller = CrudSiblingsController(siblingRelation: relation, basePath: baseIdPath, path: path, activeMethods: Set(methods))
+                controller = CrudSiblingsController(siblingRelation: relation, path: fullPath, activeMethods: Set(methods))
             case .except(let methods):
-                controller = CrudSiblingsController(siblingRelation: relation, basePath: baseIdPath, path: path, activeMethods: allMethods.subtracting(Set(methods)))
+                controller = CrudSiblingsController(siblingRelation: relation, path: fullPath, activeMethods: allMethods.subtracting(Set(methods)))
             }
 
             try controller.boot(router: self.router)
@@ -121,15 +130,18 @@ public extension CrudController {
         ThroughType.Right == ModelType,
         ThroughType.Left == ChildType {
             let baseIdPath = self.path.appending(ModelType.ID.parameter)
+            let adjustedPath = path.adjustedPath(for: ChildType.self)
+
+            let fullPath = baseIdPath.appending(adjustedPath)
 
             let allMethods: Set<ModifiableSiblingRouterMethod> = Set([.read, .readAll, .create, .update, .delete])
             let controller: CrudSiblingsController<ChildType, ModelType, ThroughType>
 
             switch either {
             case .only(let methods):
-                controller = CrudSiblingsController(siblingRelation: relation, basePath: baseIdPath, path: path, activeMethods: Set(methods))
+                controller = CrudSiblingsController(siblingRelation: relation, path: fullPath, activeMethods: Set(methods))
             case .except(let methods):
-                controller = CrudSiblingsController(siblingRelation: relation, basePath: baseIdPath, path: path, activeMethods: allMethods.subtracting(Set(methods)))
+                controller = CrudSiblingsController(siblingRelation: relation, path: fullPath, activeMethods: allMethods.subtracting(Set(methods)))
             }
 
             try controller.boot(router: self.router)
