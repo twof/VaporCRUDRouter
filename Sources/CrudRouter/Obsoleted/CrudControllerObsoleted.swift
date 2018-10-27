@@ -12,11 +12,7 @@ extension CrudController {
         ParentType: Model & Content,
         ModelType.Database == ParentType.Database,
         ParentType.ID: Parameter {
-            let baseIdPath = self.path.appending(ModelType.ID.parameter)
-
-            let controller = CrudParentController(relation: relation, basePath: baseIdPath, path: path, activeMethods: Set())
-
-            try controller.boot(router: self.router)
+            fatalError()
     }
 }
 
@@ -32,11 +28,7 @@ extension CrudController {
         ChildType: Model & Content,
         ModelType.Database == ChildType.Database,
         ChildType.ID: Parameter {
-            let baseIdPath = self.path.appending(ModelType.ID.parameter)
-
-            let controller = CrudChildrenController(childrenRelation: relation, basePath: baseIdPath, path: path, activeMethods: Set())
-
-            try controller.boot(router: self.router)
+            fatalError()
     }
 }
 
@@ -56,11 +48,7 @@ public extension CrudController {
         ThroughType.Database == ChildType.Database,
         ThroughType.Left == ModelType,
         ThroughType.Right == ChildType {
-            let baseIdPath = self.path.appending(ModelType.ID.parameter)
-
-            let controller = CrudSiblingsController(siblingRelation: relation, basePath: baseIdPath, path: path, activeMethods: Set())
-
-            try controller.boot(router: self.router)
+            fatalError()
     }
 
     @available(swift, obsoleted: 4.0, renamed: "crud(at:siblings:relationConfiguration:)")
@@ -77,10 +65,6 @@ public extension CrudController {
         ThroughType.Database == ChildType.Database,
         ThroughType.Right == ModelType,
         ThroughType.Left == ChildType {
-            let baseIdPath = self.path.appending(ModelType.ID.parameter)
-
-            let controller = CrudSiblingsController(siblingRelation: relation, basePath: baseIdPath, path: path, activeMethods: Set())
-
-            try controller.boot(router: self.router)
+            fatalError()
     }
 }
