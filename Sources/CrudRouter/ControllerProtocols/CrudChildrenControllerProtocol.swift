@@ -1,7 +1,7 @@
 import Vapor
 import Fluent
 
-public protocol CrudChildrenControllerProtocol: Crudable {
+public protocol CrudChildrenControllerProtocol {
     associatedtype ParentType: Model & Content where ParentType.ID: Parameter
     associatedtype ChildType: Model & Content where ChildType.ID: Parameter, ChildType.Database == ParentType.Database
 
