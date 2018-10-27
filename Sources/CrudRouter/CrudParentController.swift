@@ -6,28 +6,23 @@ public struct CrudParentController<ChildT: Model & Content, ParentT: Model & Con
     public typealias ChildType = ChildT
 
     public let relation: KeyPath<ChildType, Parent<ChildType, ParentType>>
-    let basePath: [PathComponentsRepresentable]
     let path: [PathComponentsRepresentable]
     let activeMethods: Set<ParentRouterMethod>
 
     init(
         relation: KeyPath<ChildType, Parent<ChildType, ParentType>>,
-        basePath: [PathComponentsRepresentable],
         path: [PathComponentsRepresentable],
         activeMethods: Set<ParentRouterMethod>
     ) {
-        let adjustedPath = path.adjustedPath(for: ParentType.self)
-
         self.relation = relation
-        self.basePath = basePath
-        self.path = adjustedPath
+        self.path = path
         self.activeMethods = activeMethods
     }
 }
 
 extension CrudParentController: RouteCollection {
     public func boot(router: Router) throws {
-        let parentPath = self.basePath.appending(self.path)
+        let parentPath = self.path
 
         self.activeMethods.forEach {
             $0.register(

@@ -13,20 +13,15 @@ public struct CrudSiblingsController<ChildT: Model & Content, ParentT: Model & C
     public typealias ChildType = ChildT
 
     public var siblings: KeyPath<ParentType, Siblings<ParentType, ChildType, ThroughType>>
-    let basePath: [PathComponentsRepresentable]
     let path: [PathComponentsRepresentable]
     let activeMethods: Set<ModifiableSiblingRouterMethod>
 
     init(
         siblingRelation: KeyPath<ParentType, Siblings<ParentType, ChildType, ThroughType>>,
-        basePath: [PathComponentsRepresentable],
         path: [PathComponentsRepresentable],
         activeMethods: Set<ModifiableSiblingRouterMethod>
     ) {
-        let path = path.adjustedPath(for: ChildType.self)
-
         self.siblings = siblingRelation
-        self.basePath = basePath
         self.path = path
         self.activeMethods = activeMethods
     }
@@ -37,8 +32,8 @@ extension CrudSiblingsController: RouteCollection {}
 public extension CrudSiblingsController where ThroughType.Right == ParentType,
 ThroughType.Left == ChildType {
     public func boot(router: Router) throws {
-        let parentPath = self.basePath.appending(self.path)
-        let parentIdPath = self.basePath.appending(self.path).appending(ParentType.ID.parameter)
+        let parentPath = self.path
+        let parentIdPath = self.path.appending(ParentType.ID.parameter)
 
         self.activeMethods.forEach {
             $0.register(
@@ -54,8 +49,8 @@ ThroughType.Left == ChildType {
 public extension CrudSiblingsController where ThroughType.Left == ParentType,
 ThroughType.Right == ChildType {
     public func boot(router: Router) throws {
-        let parentPath = self.basePath.appending(self.path)
-        let parentIdPath = self.basePath.appending(self.path).appending(ParentType.ID.parameter)
+        let parentPath = self.path
+        let parentIdPath = self.path.appending(ParentType.ID.parameter)
 
         self.activeMethods.forEach {
             $0.register(
@@ -70,8 +65,8 @@ ThroughType.Right == ChildType {
 
 public extension CrudSiblingsController {
     public func boot(router: Router) throws {
-        let parentPath = self.basePath.appending(self.path)
-        let parentIdPath = self.basePath.appending(self.path).appending(ParentType.ID.parameter)
+        let parentPath = self.path
+        let parentIdPath = self.path.appending(ParentType.ID.parameter)
 
         router.get(parentIdPath, use: self.index)
         router.get(parentPath, use: self.indexAll)
