@@ -50,6 +50,8 @@ extension CrudChildrenController {
             }
 
             try controller.boot(router: self.router)
+
+            try relationConfiguration?(controller)
     }
 }
 
@@ -81,6 +83,8 @@ extension CrudChildrenController {
             }
 
             try controller.boot(router: self.router)
+
+            try relationConfiguration?(controller)
     }
 }
 
@@ -116,6 +120,8 @@ public extension CrudChildrenController {
             }
 
             try controller.boot(router: self.router)
+
+            try relationConfiguration?(controller)
     }
 
     public func crud<ChildChildType, ThroughType>(
@@ -148,6 +154,8 @@ public extension CrudChildrenController {
             }
 
             try controller.boot(router: self.router)
+
+            try relationConfiguration?(controller)
     }
 }
 

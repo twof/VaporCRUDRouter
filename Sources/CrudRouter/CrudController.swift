@@ -43,6 +43,8 @@ extension CrudController {
             }
 
             try controller.boot(router: self.router)
+
+            try relationConfiguration?(controller)
     }
 }
 
