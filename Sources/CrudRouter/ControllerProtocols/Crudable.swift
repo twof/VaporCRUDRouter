@@ -96,7 +96,7 @@ extension Crudable {
         ChildType.Database == ChildChildType.Database,
         ChildChildType.ID: Parameter {
             let baseIdPath = self.path.appending(ChildType.ID.parameter)
-            let adjustedPath = path.adjustedPath(for: ChildType.self)
+            let adjustedPath = path.adjustedPath(for: ChildChildType.self)
 
             let fullPath = baseIdPath.appending(adjustedPath)
 
