@@ -1,11 +1,12 @@
 import FluentSQLite
 import Vapor
+import CrudRouter
 
 public struct Planet: SQLiteModel {
     public var id: Int?
     public var name: String
     public var galaxyID: Int
-    
+
     public init(id: Int?=nil, name: String, galaxyID: Int) {
         self.id = id
         self.name = name
@@ -29,3 +30,4 @@ extension Planet {
 
 extension Planet: Content { }
 extension Planet: Migration { }
+extension Planet: Returnable { }

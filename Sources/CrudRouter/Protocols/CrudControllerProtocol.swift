@@ -2,17 +2,16 @@ import Vapor
 import Fluent
 
 public protocol CrudControllerProtocol {
-    associatedtype ModelType: Model, Content where ModelType.ID: Parameter
-    associatedtype ReturnModelType: Content
-    func indexAll(_ req: Request) throws -> Future<[ReturnModelType]>
-    func index(_ req: Request) throws -> Future<ReturnModelType>
-    func update(_ req: Request) throws -> Future<ReturnModelType>
-    func create(_ req: Request) throws -> Future<ReturnModelType>
+    associatedtype ModelType: Model, Content, Returnable where ModelType.ID: Parameter
+    func indexAll(_ req: Request) throws -> Future<[ModelType.Return]>
+    func index(_ req: Request) throws -> Future<ModelType.Return>
+    func update(_ req: Request) throws -> Future<ModelType.Return>
+    func create(_ req: Request) throws -> Future<ModelType.Return>
     func delete(_ req: Request) throws -> Future<HTTPStatus>
 }
 
-public extension CrudControllerProtocol where ModelType: Publicable, ReturnModelType == ModelType.PublicModel {
-    func indexAll(_ req: Request) throws -> Future<[ModelType.PublicModel]> {
+public extension CrudControllerProtocol where ModelType: Publicable, ModelType.Return == ModelType.PublicModel {
+    func indexAll(_ req: Request) throws -> Future<[ModelType.Return]> {
         return ModelType
             .query(on: req)
             .all()
@@ -23,7 +22,7 @@ public extension CrudControllerProtocol where ModelType: Publicable, ReturnModel
             }
     }
     
-    func index(_ req: Request) throws -> Future<ModelType.PublicModel> {
+    func index(_ req: Request) throws -> Future<ModelType.Return> {
         let id: ModelType.ID = try getId(from: req)
         
         return ModelType
@@ -34,13 +33,13 @@ public extension CrudControllerProtocol where ModelType: Publicable, ReturnModel
             }
     }
     
-    func create(_ req: Request) throws -> Future<ModelType.PublicModel> {
+    func create(_ req: Request) throws -> Future<ModelType.Return> {
         return try req.content.decode(ModelType.self).flatMap { model in
             return model.save(on: req).flatMap { try $0.public(on: req) }
         }
     }
     
-    func update(_ req: Request) throws -> Future<ModelType.PublicModel> {
+    func update(_ req: Request) throws -> Future<ModelType.Return> {
         let id: ModelType.ID = try getId(from: req)
         
         return try req.content.decode(ModelType.self).flatMap { model in
@@ -62,25 +61,25 @@ public extension CrudControllerProtocol where ModelType: Publicable, ReturnModel
     }
 }
 
-public extension CrudControllerProtocol where ReturnModelType == ModelType {
-    func indexAll(_ req: Request) throws -> Future<[ModelType]> {
+public extension CrudControllerProtocol where ModelType.Return == ModelType {
+    func indexAll(_ req: Request) throws -> Future<[ModelType.Return]> {
         return ModelType.query(on: req).all().map { elements in
             Array(elements)
         }
     }
     
-    func index(_ req: Request) throws -> Future<ModelType> {
+    func index(_ req: Request) throws -> Future<ModelType.Return> {
         let id: ModelType.ID = try getId(from: req)
         return ModelType.find(id, on: req).unwrap(or: Abort(.notFound))
     }
     
-    func create(_ req: Request) throws -> Future<ModelType> {
+    func create(_ req: Request) throws -> Future<ModelType.Return> {
         return try req.content.decode(ModelType.self).flatMap { model in
             return model.save(on: req)
         }
     }
     
-    func update(_ req: Request) throws -> Future<ModelType> {
+    func update(_ req: Request) throws -> Future<ModelType.Return> {
         let id: ModelType.ID = try getId(from: req)
         return try req.content.decode(ModelType.self).flatMap { model in
             var temp = model
@@ -100,10 +99,32 @@ public extension CrudControllerProtocol where ReturnModelType == ModelType {
     }
 }
 
+public extension CrudControllerProtocol {
+    func indexAll(_ req: Request) throws -> Future<[ModelType.Return]> {
+        fatalError()
+    }
+
+    func index(_ req: Request) throws -> Future<ModelType.Return> {
+        fatalError()
+    }
+
+    func create(_ req: Request) throws -> Future<ModelType.Return> {
+        fatalError()
+    }
+
+    func update(_ req: Request) throws -> Future<ModelType.Return> {
+        fatalError()
+    }
+
+    func delete(_ req: Request) throws -> Future<HTTPStatus> {
+        fatalError()
+    }
+}
+
 fileprivate extension CrudControllerProtocol {
     func getId<T: ID>(from req: Request) throws -> T {
         guard let id = try req.parameters.next(ModelType.ID.self) as? T else { fatalError() }
-        
+
         return id
     }
 }

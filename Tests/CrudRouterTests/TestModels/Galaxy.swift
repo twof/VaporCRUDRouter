@@ -5,7 +5,7 @@ import CrudRouter
 struct Galaxy: SQLiteModel {
     var id: Int?
     var name: String
-    
+
     public init(id: Int?=nil, name: String) {
         self.id = id
         self.name = name
@@ -22,6 +22,8 @@ extension Galaxy {
 extension Galaxy: Content { }
 extension Galaxy: Migration { }
 extension Galaxy: Parameter { }
+extension Galaxy: Returnable {  }
+
 extension Galaxy: Publicable {
     public struct PublicGalaxy: Content {
         var nameAndId: String

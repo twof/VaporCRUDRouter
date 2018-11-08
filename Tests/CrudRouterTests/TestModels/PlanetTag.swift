@@ -1,12 +1,14 @@
 import FluentSQLite
+import CrudRouter
+import Vapor
 
 struct PlanetTag: SQLitePivot {
     typealias Left = Planet
     typealias Right = Tag
-    
+
     static var leftIDKey: LeftIDKey = \.planetID
     static var rightIDKey: RightIDKey = \.tagID
-    
+
     var id: Int?
     var planetID: Int
     var tagID: Int
@@ -20,3 +22,5 @@ extension PlanetTag: ModifiablePivot {
 }
 
 extension PlanetTag: Migration { }
+extension PlanetTag: Returnable { }
+extension PlanetTag: Content { }

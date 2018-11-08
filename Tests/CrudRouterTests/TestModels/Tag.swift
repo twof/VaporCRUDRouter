@@ -1,5 +1,6 @@
 import FluentSQLite
 import Vapor
+import CrudRouter
 
 struct Tag: SQLiteModel {
     var id: Int?
@@ -15,3 +16,4 @@ extension Tag {
 
 extension Tag: Content { }
 extension Tag: Migration { }
+extension Tag: Returnable { }
