@@ -1,5 +1,5 @@
 import XCTest
-@testable import CrudRouter
+import CrudRouter
 import Vapor
 import FluentSQLite
 

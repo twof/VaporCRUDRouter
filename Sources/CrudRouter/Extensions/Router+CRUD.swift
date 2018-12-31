@@ -2,6 +2,14 @@ import Vapor
 import Fluent
 
 public extension Router {
+    
+    /// Registers CRUD routes for the supplied model.
+    ///
+    /// - Parameters:
+    ///   - path: The path where all created routes will be based. Defaults to snake cased name of type.
+    ///   - type: The model to create routes for.
+    ///   - either: Select to include or exclude specific operations. Defaults to all CRUD operations.
+    ///   - relationConfiguration: Closure to configure child, parent, or sibling routes.
     public func crud<ModelType: Model & Content>(
         _ path: PathComponentsRepresentable...,
         register type: ModelType.Type,

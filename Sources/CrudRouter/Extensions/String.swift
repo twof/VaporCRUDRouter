@@ -1,6 +1,10 @@
 import Foundation
 
 public extension String {
+    
+    /// Returns a snake cased version of self if possible
+    ///
+    /// - Returns: A snake cased version of self
     public func snakeCased() -> String? {
         let pattern = "([a-z0-9])([A-Z])"
 
