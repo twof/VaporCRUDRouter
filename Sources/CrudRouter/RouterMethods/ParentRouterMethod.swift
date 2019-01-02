@@ -4,9 +4,9 @@ public enum ParentRouterMethod {
     case read
     case update
 
-    func register<ChildType, ParentType>(
+    func register<Controller: CrudParentControllerProtocol>(
         router: Router,
-        controller: CrudParentController<ChildType, ParentType>,
+        controller: Controller,
         path: [PathComponentsRepresentable]
     ) {
         switch self {

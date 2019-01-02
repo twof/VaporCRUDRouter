@@ -1,7 +1,8 @@
 import Vapor
 import Fluent
 
-public struct CrudSiblingsController<ChildT: Model & Content, ParentT: Model & Content, ThroughT: ModifiablePivot>: CrudSiblingsControllerProtocol, Crudable where
+public struct CrudSiblingsController<ChildT: Model & Content, ParentT: Model & Content, ThroughT: ModifiablePivot>
+    where
     ChildT.ID: Parameter,
     ParentT.ID: Parameter,
     ChildT.Database == ParentT.Database,
@@ -30,7 +31,14 @@ public struct CrudSiblingsController<ChildT: Model & Content, ParentT: Model & C
     }
 }
 
-extension CrudSiblingsController: RouteCollection {}
+extension CrudSiblingsController: CrudSiblingsControllerProtocol {
+    public typealias ModelType = ChildT
+    public typealias ReturnModelType = ChildT
+}
+
+extension CrudSiblingsController: Crudable { }
+
+extension CrudSiblingsController: RouteCollection { }
 
 public extension CrudSiblingsController where ThroughType.Right == ParentType,
 ThroughType.Left == ChildType {

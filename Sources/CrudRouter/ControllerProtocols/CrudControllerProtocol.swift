@@ -1,9 +1,7 @@
 import Vapor
 import Fluent
 
-public protocol CrudControllerProtocol {
-    associatedtype ModelType: Model, Content where ModelType.ID: Parameter
-    associatedtype ReturnModelType: Content
+public protocol CrudControllerProtocol: ControllerProtocol {
     func indexAll(_ req: Request) throws -> Future<[ReturnModelType]>
     func index(_ req: Request) throws -> Future<ReturnModelType>
     func update(_ req: Request) throws -> Future<ReturnModelType>

@@ -1,5 +1,6 @@
 import FluentSQLite
 import Vapor
+import CrudRouter
 
 public struct Planet: SQLiteModel {
     public var id: Int?
@@ -29,3 +30,12 @@ extension Planet {
 
 extension Planet: Content { }
 extension Planet: Migration { }
+extension Planet: Publicable {
+    public struct PublicPlanet: Content {
+        var nameAndId: String
+    }
+    
+    public func `public`(on conn: DatabaseConnectable) throws -> EventLoopFuture<PublicPlanet> {
+        return conn.future(PublicPlanet(nameAndId: "\(String(self.id ?? 0))\(self.name)"))
+    }
+}

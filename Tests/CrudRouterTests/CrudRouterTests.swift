@@ -47,7 +47,15 @@ struct TestSeeding: SQLiteMigration {
     static let galaxies = [Galaxy(name: "Milky Way")]
     
     static func prepare(on conn: SQLiteConnection) -> EventLoopFuture<Void> {
-        return TestSeeding.galaxies.create(on: conn).transform(to: ())
+        return TestSeeding
+            .galaxies
+            .create(on: conn)
+            .flatMap { galaxies -> Future<Planet> in
+                guard let gal = galaxies.first, let id = gal.id else { fatalError() }
+                let planet = Planet(name: "Hello", galaxyID: id)
+                return planet.create(on: conn)
+            }.transform(to: ())
+        
     }
     
     static func revert(on conn: SQLiteConnection) -> EventLoopFuture<Void> {
@@ -89,12 +97,13 @@ func configure(_ config: inout Config, _ env: inout Environment, _ services: ino
 }
 
 func routes(_ router: Router) throws {
-    router.crud(register: Galaxy.self) { controller in
-        controller.crud(children: \.planets)
-    }
-    router.crud(register: Planet.self) { controller in
-        controller.crud(parent: \.galaxy)
-        controller.crud(siblings: \.tags)
+    router.crud(register: Galaxy.self)
+//    { controller in
+//        controller.crud(children: \.planets)
+//    }
+    router.crud(register: Planet.self) { (controller: PublicableCrudController) in
+        controller.crud(parent: \Planet.galaxy)
+//        controller.crud(siblings: \.tags)
     }
     router.crud(register: Tag.self) { controller in
         controller.crud(siblings: \.planets)
@@ -196,8 +205,8 @@ final class CrudRouterTests: XCTestCase {
     func testPublicable() throws {
         do {
 //            let resp = try app.getResponse(to: "/galaxy", method: .GET, decodeTo: [Galaxy.PublicGalaxy].self)
-            let resp = try app.sendRequest(to: "/galaxy", method: .GET)
-            XCTAssert(try resp.content.syncDecode([Galaxy.PublicGalaxy].self).count == 1)
+            let resp = try app.sendRequest(to: "/planet", method: .GET)
+            XCTAssert(try resp.content.syncDecode([Planet.PublicPlanet].self).count == 1)
 //            XCTAssert(resp.count == 1)
 //            XCTAssert(resp[0].nameAndId == "Milky Way 0")
 
