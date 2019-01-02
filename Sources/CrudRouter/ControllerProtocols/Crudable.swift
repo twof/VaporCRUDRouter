@@ -218,7 +218,7 @@ extension Crudable where ModelType: Publicable, ReturnModelType == ModelType.Pub
         at path: PathComponentsRepresentable...,
         children relation: KeyPath<ModelType, Children<ModelType, ChildChildType>>,
         _ either: OnlyExceptEither<ChildrenRouterMethod> = .only([.read, .readAll, .create, .update, .delete]),
-        relationConfiguration: ((CrudChildrenController<ChildChildType, ModelType>) -> Void)?=nil
+        relationConfiguration: ((PublicableCrudChildrenController<ChildChildType, ModelType>) -> Void)?=nil
         ) where
         ChildChildType: Model & Content,
         ModelType.Database == ChildChildType.Database,
@@ -229,13 +229,13 @@ extension Crudable where ModelType: Publicable, ReturnModelType == ModelType.Pub
             let fullPath = baseIdPath.appending(adjustedPath)
             
             let allMethods: Set<ChildrenRouterMethod> = Set([.read, .update])
-            let controller: CrudChildrenController<ChildChildType, ModelType>
+            let controller: PublicableCrudChildrenController<ChildChildType, ModelType>
             
             switch either {
             case .only(let methods):
-                controller = CrudChildrenController<ChildChildType, ModelType>(childrenRelation: relation, path: fullPath, router: self.router, activeMethods: Set(methods))
+                controller = PublicableCrudChildrenController<ChildChildType, ModelType>(childrenRelation: relation, path: fullPath, router: self.router, activeMethods: Set(methods))
             case .except(let methods):
-                controller = CrudChildrenController<ChildChildType, ModelType>(childrenRelation: relation, path: fullPath, router: self.router, activeMethods: allMethods.subtracting(Set(methods)))
+                controller = PublicableCrudChildrenController<ChildChildType, ModelType>(childrenRelation: relation, path: fullPath, router: self.router, activeMethods: allMethods.subtracting(Set(methods)))
             }
             
             do { try controller.boot(router: self.router) } catch { fatalError("I have no reason to expect boot to throw") }

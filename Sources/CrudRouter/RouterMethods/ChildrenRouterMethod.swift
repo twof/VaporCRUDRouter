@@ -7,9 +7,9 @@ public enum ChildrenRouterMethod {
     case update
     case delete
 
-    func register<ChildType, ParentType>(
+    func register<Controller: CrudChildrenControllerProtocol>(
         router: Router,
-        controller: CrudChildrenController<ChildType, ParentType>,
+        controller: Controller,
         path: [PathComponentsRepresentable],
         idPath: [PathComponentsRepresentable]
     ) {
