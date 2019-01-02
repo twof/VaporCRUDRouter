@@ -12,45 +12,45 @@ public protocol Crudable: ControllerProtocol {
 //        ModelType.Database == ParentType.Database,
 //        ParentType.ID: Parameter
 
-    func crud<ChildChildType>(
-        at path: PathComponentsRepresentable...,
-        children relation: KeyPath<ModelType, Children<ModelType, ChildChildType>>,
-        _ either: OnlyExceptEither<ChildrenRouterMethod>,
-        relationConfiguration: ((CrudChildrenController<ChildChildType, ModelType>) -> Void)?
-    ) where
-        ChildChildType: Model & Content,
-        ModelType.Database == ChildChildType.Database,
-        ChildChildType.ID: Parameter
-
-    func crud<ChildChildType, ThroughType>(
-        at path: PathComponentsRepresentable...,
-        siblings relation: KeyPath<ModelType, Siblings<ModelType, ChildChildType, ThroughType>>,
-        _ either: OnlyExceptEither<ModifiableSiblingRouterMethod>,
-        relationConfiguration: ((CrudSiblingsController<ChildChildType, ModelType, ThroughType>) -> Void)?
-    ) where
-        ChildChildType: Content,
-        ModelType.Database == ThroughType.Database,
-        ChildChildType.ID: Parameter,
-        ThroughType: ModifiablePivot,
-        ThroughType.Database: JoinSupporting,
-        ThroughType.Database == ChildChildType.Database,
-        ThroughType.Left == ModelType,
-        ThroughType.Right == ChildChildType
-
-    func crud<ChildChildType, ThroughType>(
-        at path: PathComponentsRepresentable...,
-        siblings relation: KeyPath<ModelType, Siblings<ModelType, ChildChildType, ThroughType>>,
-        _ either: OnlyExceptEither<ModifiableSiblingRouterMethod>,
-        relationConfiguration: ((CrudSiblingsController<ChildChildType, ModelType, ThroughType>) -> Void)?
-    ) where
-        ChildChildType: Content,
-        ModelType.Database == ThroughType.Database,
-        ChildChildType.ID: Parameter,
-        ThroughType: ModifiablePivot,
-        ThroughType.Database: JoinSupporting,
-        ThroughType.Database == ChildChildType.Database,
-        ThroughType.Right == ModelType,
-        ThroughType.Left == ChildChildType
+//    func crud<ChildChildType>(
+//        at path: PathComponentsRepresentable...,
+//        children relation: KeyPath<ModelType, Children<ModelType, ChildChildType>>,
+//        _ either: OnlyExceptEither<ChildrenRouterMethod>,
+//        relationConfiguration: ((CrudChildrenController<ChildChildType, ModelType>) -> Void)?
+//    ) where
+//        ChildChildType: Model & Content,
+//        ModelType.Database == ChildChildType.Database,
+//        ChildChildType.ID: Parameter
+//
+//    func crud<ChildChildType, ThroughType>(
+//        at path: PathComponentsRepresentable...,
+//        siblings relation: KeyPath<ModelType, Siblings<ModelType, ChildChildType, ThroughType>>,
+//        _ either: OnlyExceptEither<ModifiableSiblingRouterMethod>,
+//        relationConfiguration: ((CrudSiblingsController<ChildChildType, ModelType, ThroughType>) -> Void)?
+//    ) where
+//        ChildChildType: Content,
+//        ModelType.Database == ThroughType.Database,
+//        ChildChildType.ID: Parameter,
+//        ThroughType: ModifiablePivot,
+//        ThroughType.Database: JoinSupporting,
+//        ThroughType.Database == ChildChildType.Database,
+//        ThroughType.Left == ModelType,
+//        ThroughType.Right == ChildChildType
+//
+//    func crud<ChildChildType, ThroughType>(
+//        at path: PathComponentsRepresentable...,
+//        siblings relation: KeyPath<ModelType, Siblings<ModelType, ChildChildType, ThroughType>>,
+//        _ either: OnlyExceptEither<ModifiableSiblingRouterMethod>,
+//        relationConfiguration: ((CrudSiblingsController<ChildChildType, ModelType, ThroughType>) -> Void)?
+//    ) where
+//        ChildChildType: Content,
+//        ModelType.Database == ThroughType.Database,
+//        ChildChildType.ID: Parameter,
+//        ThroughType: ModifiablePivot,
+//        ThroughType.Database: JoinSupporting,
+//        ThroughType.Database == ChildChildType.Database,
+//        ThroughType.Right == ModelType,
+//        ThroughType.Left == ChildChildType
 }
 
 extension Crudable where ReturnModelType == ModelType {

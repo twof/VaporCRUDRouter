@@ -54,8 +54,11 @@ struct TestSeeding: SQLiteMigration {
                 guard let gal = galaxies.first, let id = gal.id else { fatalError() }
                 let planet = Planet(name: "Hello", galaxyID: id)
                 return planet.create(on: conn)
-            }.transform(to: ())
-        
+            }.flatMap { planet -> Future<(Planet, Tag)> in
+                return Tag(name: "HelloTag").create(on: conn).map { tag in (planet, tag) }
+            }.flatMap { (planet, tag) -> Future<Void> in
+                return try PlanetTag(planet, tag).create(on: conn).transform(to: ())
+            }
     }
     
     static func revert(on conn: SQLiteConnection) -> EventLoopFuture<Void> {
@@ -97,13 +100,12 @@ func configure(_ config: inout Config, _ env: inout Environment, _ services: ino
 }
 
 func routes(_ router: Router) throws {
-    router.crud(register: Galaxy.self)
-//    { controller in
-//        controller.crud(children: \.planets)
-//    }
+    router.crud(register: Galaxy.self) { controller in
+        controller.crud(children: \.planets)
+    }
     router.crud(register: Planet.self) { (controller: PublicableCrudController) in
-        controller.crud(parent: \Planet.galaxy)
-//        controller.crud(siblings: \.tags)
+        controller.crud(parent: \.galaxy)
+        controller.crud(siblings: \.tags)
     }
     router.crud(register: Tag.self) { controller in
         controller.crud(siblings: \.planets)
@@ -166,7 +168,6 @@ final class CrudRouterTests: XCTestCase {
     var app: Application!
     
     override func setUp() {
-//        try! Application.reset()
         app = try! Application.testable()
     }
     
@@ -202,22 +203,65 @@ final class CrudRouterTests: XCTestCase {
         XCTAssert(paths.contains { $0 == ["DELETE", "planet", "int"] })
     }
     
-    func testPublicable() throws {
+    func testPublicableWithParent() throws {
         do {
-//            let resp = try app.getResponse(to: "/galaxy", method: .GET, decodeTo: [Galaxy.PublicGalaxy].self)
             let resp = try app.sendRequest(to: "/planet", method: .GET)
             XCTAssert(try resp.content.syncDecode([Planet.PublicPlanet].self).count == 1)
-//            XCTAssert(resp.count == 1)
-//            XCTAssert(resp[0].nameAndId == "Milky Way 0")
-
+        } catch {
+            XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")
+        }
+    }
+    
+    func testPublicableWithChildren() throws {
+        do {
+            let resp = try app.sendRequest(to: "/galaxy", method: .GET)
+            XCTAssert(try resp.content.syncDecode([Galaxy.PublicGalaxy].self).count == 1)
+        } catch {
+            XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")
+        }
+    }
+    
+    func testPublicableWithSiblings() throws {
+        do {
+            let resp = try app.sendRequest(to: "/planet", method: .GET)
+            XCTAssert(try resp.content.syncDecode([Planet.PublicPlanet].self).count == 1)
+        } catch {
+            XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")
+        }
+    }
+    
+    func testEmbeddedPublicableChildren() throws {
+        do {
+            let resp = try app.sendRequest(to: "/galaxy/1/planet", method: .GET)
+            XCTAssert(try resp.content.syncDecode([Planet.PublicPlanet].self).count == 1)
         } catch {
             XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")
         }
     }
 
+    func testEmbeddedPublicableParent() throws {
+        do {
+            let resp = try app.sendRequest(to: "/planet/1/galaxy", method: .GET)
+            XCTAssert(try resp.content.syncDecode(Galaxy.PublicGalaxy.self).nameAndId == "1Milky Way")
+        } catch {
+            XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")
+        }
+    }
+    
+    func testEmbeddedPublicableSiblings() throws {
+        do {
+            let resp = try app.sendRequest(to: "/tag/1/planet", method: .GET)
+            XCTAssert(try resp.content.syncDecode([Planet.PublicPlanet].self).count == 1)
+        } catch {
+            XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")
+        }
+    }
+    
     static var allTests = [
         ("testBaseCrudRegistrationWithRouteName", testBaseCrudRegistrationWithRouteName),
         ("testBaseCrudRegistrationWithDefaultRoute", testBaseCrudRegistrationWithDefaultRoute),
-        ("testPublicable", testPublicable),
+        ("testPublicableWithParent", testPublicableWithParent),
+        ("testPublicableWithChildren", testPublicableWithChildren),
+        ("testPublicableWithSiblings", testPublicableWithSiblings)
     ]
 }

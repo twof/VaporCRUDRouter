@@ -30,7 +30,7 @@ extension CrudController: CrudControllerProtocol {
 
 extension CrudController: Crudable { }
 
-extension CrudController: RouteCollection {
+extension CrudController: ControllerProtocol {
     public func boot(router: Router) throws {
         let basePath = self.path
         let baseIdPath = self.path.appending(ModelType.ID.parameter)
@@ -82,16 +82,3 @@ extension PublicableCrudController: ControllerProtocol {
         }
     }
 }
-
-//extension PublicableCrudController: RouteCollection {
-//    public func boot(router: Router) throws {
-//        let basePath = path
-//        let baseIdPath = path.appending(ModelType.ID.parameter)
-//
-//        router.get(baseIdPath, use: self.index)
-//        router.get(basePath, use: self.indexAll)
-//        router.post(basePath, use: self.create)
-//        router.put(baseIdPath, use: self.update)
-//        router.delete(baseIdPath, use: self.delete)
-//    }
-//}

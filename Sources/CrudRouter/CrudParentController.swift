@@ -1,7 +1,7 @@
 import Vapor
 import Fluent
 
-public protocol ParentControllerProtocol: Crudable, RouteCollection {
+public protocol ParentControllerProtocol: RouteCollection {
     associatedtype ChildType: Model & Content where ChildType.ID: Parameter, ChildType.Database == ParentType.Database
     associatedtype ParentType: Model & Content where ParentType.ID: Parameter
     
@@ -33,9 +33,11 @@ public struct CrudParentController<ChildT: Model & Content, ParentT: Model & Con
     }
 }
 
+extension CrudParentController: Crudable { }
+
 extension CrudParentController: CrudParentControllerProtocol {
-    public typealias ModelType = ChildT
-    public typealias ReturnModelType = ChildT
+    public typealias ModelType = ParentT
+    public typealias ReturnModelType = ParentT
 }
 
 extension CrudParentController: ParentControllerProtocol {
@@ -55,7 +57,7 @@ extension CrudParentController: ParentControllerProtocol {
     }
 }
 
-public struct PublicableCrudParentController<ChildT: Model & Content, ParentT: Model & Content> where ChildT.ID: Parameter, ParentT.ID: Parameter, ChildT.Database == ParentT.Database, ChildT: Publicable {
+public struct PublicableCrudParentController<ChildT: Model & Content, ParentT: Model & Content> where ChildT.ID: Parameter, ParentT.ID: Parameter, ChildT.Database == ParentT.Database, ParentT: Publicable {
     public let relation: KeyPath<ChildType, Parent<ChildType, ParentType>>
     public let path: [PathComponentsRepresentable]
     public let router: Router
@@ -74,9 +76,11 @@ public struct PublicableCrudParentController<ChildT: Model & Content, ParentT: M
     }
 }
 
+extension PublicableCrudParentController: Crudable { }
+
 extension PublicableCrudParentController: CrudParentControllerProtocol {
-    public typealias ModelType = ChildT
-    public typealias ReturnModelType = ChildT.PublicModel
+    public typealias ModelType = ParentT
+    public typealias ReturnModelType = ParentT.PublicModel
 }
 
 extension PublicableCrudParentController: ParentControllerProtocol {
