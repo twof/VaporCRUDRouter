@@ -11,12 +11,28 @@ public extension Router {
         return controller
     }
 
+
     public func crud<ModelType: Model & Content>(
         _ path: PathComponentsRepresentable...,
         register type: ModelType.Type,
         relationConfiguration: ((CrudController<ModelType>) -> ())?=nil
     ) where ModelType.ID: Parameter {
+        let ModelT = ModelType.self
+        print(ModelT.self)
         let controller = CrudController<ModelType>(path: path, router: self)
+        do { try controller.boot(router: self) } catch { fatalError("I have no reason to expect boot to throw") }
+        
+        relationConfiguration?(controller)
+    }
+    
+    public func crud<ModelType: Publicable & Model & Content>(
+        _ path: PathComponentsRepresentable...,
+        register type: ModelType.Type,
+        relationConfiguration: ((PublicableCrudController<ModelType>) -> ())?=nil
+    ) where ModelType.ID: Parameter {
+        let ModelT = ModelType.self
+        print(ModelT.self)
+        let controller = PublicableCrudController<ModelType>(path: path, router: self)
         do { try controller.boot(router: self) } catch { fatalError("I have no reason to expect boot to throw") }
         
         relationConfiguration?(controller)

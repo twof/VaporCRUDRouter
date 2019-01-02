@@ -89,9 +89,10 @@ func configure(_ config: inout Config, _ env: inout Environment, _ services: ino
 }
 
 func routes(_ router: Router) throws {
-    router.crud(register: Galaxy.self) { controller in
-        controller.crud(children: \.planets)
-    }
+    router.crud(register: Galaxy.self)
+//    { controller in
+//        controller.crud(children: \.planets)
+//    }
     router.crud(register: Planet.self) { controller in
         controller.crud(parent: \.galaxy)
         controller.crud(siblings: \.tags)

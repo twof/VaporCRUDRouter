@@ -12,7 +12,7 @@ public protocol CrudControllerProtocol {
 }
 
 public extension CrudControllerProtocol where ModelType: Publicable, ReturnModelType == ModelType.PublicModel {
-    func indexAll(_ req: Request) throws -> Future<[ModelType.PublicModel]> {
+    func indexAll(_ req: Request) throws -> Future<[ReturnModelType]> {
         return ModelType
             .query(on: req)
             .all()
@@ -22,10 +22,10 @@ public extension CrudControllerProtocol where ModelType: Publicable, ReturnModel
                     .flatten(on: req)
             }
     }
-    
+
     func index(_ req: Request) throws -> Future<ModelType.PublicModel> {
         let id: ModelType.ID = try getId(from: req)
-        
+
         return ModelType
             .find(id, on: req)
             .unwrap(or: Abort(.notFound))
@@ -33,26 +33,26 @@ public extension CrudControllerProtocol where ModelType: Publicable, ReturnModel
                 return try model.public(on: req)
             }
     }
-    
+
     func create(_ req: Request) throws -> Future<ModelType.PublicModel> {
         return try req.content.decode(ModelType.self).flatMap { model in
             return model.save(on: req).flatMap { try $0.public(on: req) }
         }
     }
-    
+
     func update(_ req: Request) throws -> Future<ModelType.PublicModel> {
         let id: ModelType.ID = try getId(from: req)
-        
+
         return try req.content.decode(ModelType.self).flatMap { model in
             var temp = model
             temp.fluentID = id
             return temp.update(on: req).flatMap { try $0.public(on: req) }
         }
     }
-    
+
     func delete(_ req: Request) throws -> Future<HTTPStatus> {
         let id: ModelType.ID = try getId(from: req)
-        
+
         return ModelType
             .find(id, on: req)
             .unwrap(or: Abort(.notFound))
@@ -63,13 +63,13 @@ public extension CrudControllerProtocol where ModelType: Publicable, ReturnModel
 }
 
 public extension CrudControllerProtocol where ReturnModelType == ModelType {
-    func indexAll(_ req: Request) throws -> Future<[ModelType]> {
+    func indexAll(_ req: Request) throws -> Future<[ReturnModelType]> {
         return ModelType.query(on: req).all().map { elements in
             Array(elements)
         }
     }
     
-    func index(_ req: Request) throws -> Future<ModelType> {
+    func index(_ req: Request) throws -> Future<ReturnModelType> {
         let id: ModelType.ID = try getId(from: req)
         return ModelType.find(id, on: req).unwrap(or: Abort(.notFound))
     }
@@ -80,7 +80,7 @@ public extension CrudControllerProtocol where ReturnModelType == ModelType {
         }
     }
     
-    func update(_ req: Request) throws -> Future<ModelType> {
+    func update(_ req: Request) throws -> Future<ReturnModelType> {
         let id: ModelType.ID = try getId(from: req)
         return try req.content.decode(ModelType.self).flatMap { model in
             var temp = model

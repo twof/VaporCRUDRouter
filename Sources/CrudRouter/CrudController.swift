@@ -18,17 +18,10 @@ public struct CrudController<ModelT: Model & Content> where ModelT.ID: Parameter
 
 extension CrudController: CrudControllerProtocol {
     public typealias ModelType = ModelT
-}
-
-extension CrudController where ModelT: Publicable {
-    public typealias ReturnModelType = ModelT.PublicModel
-}
-
-extension CrudController {
     public typealias ReturnModelType = ModelT
 }
 
-// MARK: Obsolted ParentsController methods
+// MARK: ParentsController methods
 extension CrudController {
     /// Returns a parent controller, which retrieves models that are parents of ModelType
     ///
@@ -156,6 +149,39 @@ extension CrudController: RouteCollection {
         let basePath = path
         let baseIdPath = path.appending(ModelType.ID.parameter)
 
+        router.get(baseIdPath, use: self.index)
+        router.get(basePath, use: self.indexAll)
+        router.post(basePath, use: self.create)
+        router.put(baseIdPath, use: self.update)
+        router.delete(baseIdPath, use: self.delete)
+    }
+}
+
+public struct PublicableCrudController<ModelT: Model & Content> where ModelT.ID: Parameter, ModelT: Publicable {
+    let path: [PathComponentsRepresentable]
+    let router: Router
+    
+    init(path: [PathComponentsRepresentable], router: Router) {
+        let path
+            = path.count == 0
+                ? [String(describing: ModelType.self).snakeCased()! as PathComponentsRepresentable]
+                : path
+        
+        self.path = path
+        self.router = router
+    }
+}
+
+extension PublicableCrudController: CrudControllerProtocol {
+    public typealias ModelType = ModelT
+    public typealias ReturnModelType = ModelT.PublicModel
+}
+
+extension PublicableCrudController: RouteCollection {
+    public func boot(router: Router) throws {
+        let basePath = path
+        let baseIdPath = path.appending(ModelType.ID.parameter)
+        
         router.get(baseIdPath, use: self.index)
         router.get(basePath, use: self.indexAll)
         router.post(basePath, use: self.create)
