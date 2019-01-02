@@ -2,39 +2,24 @@ import Vapor
 import Fluent
 
 public extension Router {
-    public func crudRouterCollection<ModelType: Model & Content>(
-        _ path: PathComponentsRepresentable...,
-        for type: ModelType.Type
-    )  -> CrudController<ModelType> where ModelType.ID: Parameter {
-        let controller = CrudController<ModelType>(path: path, router: self)
-
-        return controller
-    }
-
-
     public func crud<ModelType: Model & Content>(
         _ path: PathComponentsRepresentable...,
         register type: ModelType.Type,
+        _ either: OnlyExceptEither<RouterMethod> = .only([.read, .readAll, .create, .update, .delete]),
         relationConfiguration: ((CrudController<ModelType>) -> ())?=nil
     ) where ModelType.ID: Parameter {
-        let ModelT = ModelType.self
-        print(ModelT.self)
-        let controller = CrudController<ModelType>(path: path, router: self)
+        let allMethods: Set<RouterMethod> = Set([.read, .readAll, .create, .update, .delete])
+        let controller: CrudController<ModelType>
+
+        switch either {
+        case .only(let methods):
+            controller = CrudController<ModelType>(path: path, router: self, activeMethods: Set(methods))
+        case .except(let methods):
+            controller = CrudController<ModelType>(path: path, router: self, activeMethods: allMethods.subtracting(Set(methods)))
+        }
+
         do { try controller.boot(router: self) } catch { fatalError("I have no reason to expect boot to throw") }
-        
-        relationConfiguration?(controller)
-    }
-    
-    public func crud<ModelType: Publicable & Model & Content>(
-        _ path: PathComponentsRepresentable...,
-        register type: ModelType.Type,
-        relationConfiguration: ((PublicableCrudController<ModelType>) -> ())?=nil
-    ) where ModelType.ID: Parameter {
-        let ModelT = ModelType.self
-        print(ModelT.self)
-        let controller = PublicableCrudController<ModelType>(path: path, router: self)
-        do { try controller.boot(router: self) } catch { fatalError("I have no reason to expect boot to throw") }
-        
+
         relationConfiguration?(controller)
     }
 }

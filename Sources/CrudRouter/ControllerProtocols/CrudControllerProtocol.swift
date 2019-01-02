@@ -20,39 +20,39 @@ public extension CrudControllerProtocol where ModelType: Publicable, ReturnModel
                 return try models
                     .map { try $0.public(on: req) }
                     .flatten(on: req)
-            }
+        }
     }
-
-    func index(_ req: Request) throws -> Future<ModelType.PublicModel> {
-        let id: ModelType.ID = try getId(from: req)
-
+    
+    func index(_ req: Request) throws -> Future<ReturnModelType> {
+        let id: ModelType.ID = try req.getId()
+        
         return ModelType
             .find(id, on: req)
             .unwrap(or: Abort(.notFound))
             .flatMap { model in
                 return try model.public(on: req)
-            }
+        }
     }
-
-    func create(_ req: Request) throws -> Future<ModelType.PublicModel> {
+    
+    func create(_ req: Request) throws -> Future<ReturnModelType> {
         return try req.content.decode(ModelType.self).flatMap { model in
             return model.save(on: req).flatMap { try $0.public(on: req) }
         }
     }
-
-    func update(_ req: Request) throws -> Future<ModelType.PublicModel> {
-        let id: ModelType.ID = try getId(from: req)
-
+    
+    func update(_ req: Request) throws -> Future<ReturnModelType> {
+        let id: ModelType.ID = try req.getId()
+        
         return try req.content.decode(ModelType.self).flatMap { model in
             var temp = model
             temp.fluentID = id
             return temp.update(on: req).flatMap { try $0.public(on: req) }
         }
     }
-
+    
     func delete(_ req: Request) throws -> Future<HTTPStatus> {
-        let id: ModelType.ID = try getId(from: req)
-
+        let id: ModelType.ID = try req.getId()
+        
         return ModelType
             .find(id, on: req)
             .unwrap(or: Abort(.notFound))
@@ -62,35 +62,34 @@ public extension CrudControllerProtocol where ModelType: Publicable, ReturnModel
     }
 }
 
+
 public extension CrudControllerProtocol where ReturnModelType == ModelType {
     func indexAll(_ req: Request) throws -> Future<[ReturnModelType]> {
-        return ModelType.query(on: req).all().map { elements in
-            Array(elements)
-        }
+        return ModelType.query(on: req).all().map { Array($0) }
     }
-    
+
     func index(_ req: Request) throws -> Future<ReturnModelType> {
-        let id: ModelType.ID = try getId(from: req)
+        let id: ModelType.ID = try req.getId()
         return ModelType.find(id, on: req).unwrap(or: Abort(.notFound))
     }
-    
-    func create(_ req: Request) throws -> Future<ModelType> {
+
+    func create(_ req: Request) throws -> Future<ReturnModelType> {
         return try req.content.decode(ModelType.self).flatMap { model in
             return model.save(on: req)
         }
     }
-    
+
     func update(_ req: Request) throws -> Future<ReturnModelType> {
-        let id: ModelType.ID = try getId(from: req)
+        let id: ModelType.ID = try req.getId()
         return try req.content.decode(ModelType.self).flatMap { model in
             var temp = model
             temp.fluentID = id
             return temp.update(on: req)
         }
     }
-    
+
     func delete(_ req: Request) throws -> Future<HTTPStatus> {
-        let id: ModelType.ID = try getId(from: req)
+        let id: ModelType.ID = try req.getId()
         return ModelType
             .find(id, on: req)
             .unwrap(or: Abort(.notFound))
@@ -99,13 +98,3 @@ public extension CrudControllerProtocol where ReturnModelType == ModelType {
         }
     }
 }
-
-fileprivate extension CrudControllerProtocol {
-    func getId<T: ID>(from req: Request) throws -> T {
-        guard let id = try req.parameters.next(ModelType.ID.self) as? T else { fatalError() }
-        
-        return id
-    }
-}
-
-

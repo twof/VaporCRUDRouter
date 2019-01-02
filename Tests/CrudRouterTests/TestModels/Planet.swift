@@ -5,7 +5,7 @@ public struct Planet: SQLiteModel {
     public var id: Int?
     public var name: String
     public var galaxyID: Int
-    
+
     public init(id: Int?=nil, name: String, galaxyID: Int) {
         self.id = id
         self.name = name

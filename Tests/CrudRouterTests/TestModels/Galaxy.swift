@@ -5,7 +5,7 @@ import CrudRouter
 struct Galaxy: SQLiteModel {
     var id: Int?
     var name: String
-    
+
     public init(id: Int?=nil, name: String) {
         self.id = id
         self.name = name
