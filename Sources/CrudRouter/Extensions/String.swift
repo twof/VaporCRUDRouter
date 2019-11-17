@@ -1,7 +1,7 @@
 import Foundation
 
 public extension String {
-    public func snakeCased() -> String? {
+    func snakeCased() -> String? {
         let pattern = "([a-z0-9])([A-Z])"
 
         let regex = try? NSRegularExpression(pattern: pattern, options: [])

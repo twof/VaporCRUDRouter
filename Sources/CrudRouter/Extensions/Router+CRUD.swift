@@ -1,8 +1,8 @@
 import Vapor
 import Fluent
 
-public extension Router {
-    public func crud<ModelType: Model & Content>(
+public extension RoutesBuilder {
+    func crud<ModelType: Model & Content>(
         _ path: PathComponent...,
         register type: ModelType.Type,
         _ either: OnlyExceptEither<RouterMethod> = .only([.read, .readAll, .create, .update, .delete]),
@@ -18,7 +18,7 @@ public extension Router {
             controller = CrudController<ModelType>(path: path, router: self, activeMethods: allMethods.subtracting(Set(methods)))
         }
 
-        do { try controller.boot(router: self) } catch { fatalError("I have no reason to expect boot to throw") }
+        do { try controller.boot(routes: self) } catch { fatalError("I have no reason to expect boot to throw") }
 
         relationConfiguration?(controller)
     }

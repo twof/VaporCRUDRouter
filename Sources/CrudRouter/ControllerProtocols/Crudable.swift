@@ -11,7 +11,7 @@ public protocol Crudable: ControllerProtocol {
         relationConfiguration: ((CrudParentController<ChildType, ParentType>) -> Void)?
     ) where
         ParentType: Model & Content,
-        ChildType.Database == ParentType.Database,
+//        ChildType.Database == ParentType.Database,
         ParentType.IDValue: LosslessStringConvertible
 
     func crud<ChildChildType>(
@@ -21,7 +21,7 @@ public protocol Crudable: ControllerProtocol {
         relationConfiguration: ((CrudChildrenController<ChildChildType, ChildType>) -> Void)?
     ) where
         ChildChildType: Model & Content,
-        ChildType.Database == ChildChildType.Database
+//        ChildType.Database == ChildChildType.Database
 
     func crud<ChildChildType, ThroughType>(
         at path: PathComponent...,
@@ -86,7 +86,7 @@ extension Crudable {
         relationConfiguration: ((CrudChildrenController<ChildChildType, ChildType>) -> Void)?=nil
     ) where
         ChildChildType: Model & Content,
-        ChildType.Database == ChildChildType.Database,
+//        ChildType.Database == ChildChildType.Database,
         ChildChildType.IDValue: LosslessStringConvertible {
             let baseIdPath = self.path.appending(.parameter("\(ChildType.schema)ID"))
             let adjustedPath = path.adjustedPath(for: ChildChildType.self)
