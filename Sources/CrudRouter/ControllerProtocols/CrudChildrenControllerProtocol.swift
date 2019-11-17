@@ -6,8 +6,6 @@ import NIOExtras
 public protocol CrudChildrenControllerProtocol {
     associatedtype ParentType: Model & Content where ParentType.IDValue: LosslessStringConvertible
     associatedtype ChildType: Model & Content where ChildType.IDValue: LosslessStringConvertible
-    
-    var db: Database { get }
 
     var children: KeyPath<ParentType, Children<ParentType, ChildType>> { get }
 
@@ -24,7 +22,7 @@ public extension CrudChildrenControllerProtocol {
         let childId: ChildType.IDValue = try req.getId()
         
         let thing = ParentType
-            .query(on: db)
+            .query(on: req.db)
             .join(ChildType.self, on: children == \ParentType.$id)
         
         return
@@ -42,12 +40,12 @@ public extension CrudChildrenControllerProtocol {
 
     func indexAll(_ req: Request) throws -> EventLoopFuture<[ChildType]> {
         let parentId: ParentType.IDValue = try req.getId()
-        return ParentType
-            .find(parentId, on: db)
+        return try ParentType
+            .find(parentId, on: req.db)
             .unwrap(or: Abort(.notFound))
-            .flatMap { parent -> EventLoopFuture<[ChildType]> in
-                return try! parent[keyPath: self.children]
-                    .query(on: self.db)
+            .throwingFlatMap { parent -> EventLoopFuture<[ChildType]> in
+                return try parent[keyPath: self.children]
+                    .query(on: req.db)
                     .all()
             }
     }
@@ -55,12 +53,12 @@ public extension CrudChildrenControllerProtocol {
     func create(_ req: Request) throws -> EventLoopFuture<ChildType> {
         let parentId: ParentType.IDValue = try req.getId()
 
-        return ParentType
-            .find(parentId, on: db)
+        return try ParentType
+            .find(parentId, on: req.db)
             .unwrap(or: Abort(.notFound))
-            .flatMap { parent -> EventLoopFuture<ChildType> in
-                let child = try! req.content.decode(ChildType.self)
-                return try! parent[keyPath: self.children].
+            .throwingFlatMap { parent -> EventLoopFuture<ChildType> in
+                let child = try req.content.decode(ChildType.self)
+                return try parent[keyPath: self.children].query(on: req.db)
         }
     }
 
@@ -68,20 +66,20 @@ public extension CrudChildrenControllerProtocol {
         let parentId: ParentType.IDValue = try req.getId()
         let childId: ChildType.IDValue = try req.getId()
 
-        return ParentType
-            .find(parentId, on: db)
+        return try ParentType
+            .find(parentId, on: req.db)
             .unwrap(or: Abort(.notFound))
-            .flatMap { parent -> EventLoopFuture<ChildType> in
-                return try! parent[keyPath: self.children]
-                    .query(on: self.db)
+            .throwingFlatMap { parent -> EventLoopFuture<ChildType> in
+                return try parent[keyPath: self.children]
+                    .query(on: req.db)
                     .filter(\ChildType.fluentID == childId)
                     .first()
                     .unwrap(or: Abort(.notFound))
-            }.flatMap { oldChild in
-                return try! req.content.decode(ChildType.self).flatMap { newChild in
+            }.throwingFlatMap { oldChild in
+                return try req.content.decode(ChildType.self).flatMap { newChild in
                     var temp = newChild
                     temp.fluentID = oldChild.fluentID
-                    return temp.update(on: self.db)
+                    return temp.update(on: req.db)
                 }
         }
     }
@@ -90,16 +88,16 @@ public extension CrudChildrenControllerProtocol {
         let parentId: ParentType.IDValue = try req.getId()
         let childId: ChildType.IDValue = try req.getId()
 
-        return ParentType
-            .find(parentId, on: db)
+        return try ParentType
+            .find(parentId, on: req.db)
             .unwrap(or: Abort(.notFound))
-            .flatMap { parent -> EventLoopFuture<HTTPStatus> in
+            .throwingFlatMap { parent -> EventLoopFuture<HTTPStatus> in
                 return try parent[keyPath: self.children]
-                    .query(on: self.db)
+                    .query(on: req.db)
                     .filter(\ChildType.fluentID == childId)
                     .first()
                     .unwrap(or: Abort(.notFound))
-                    .delete(on: self.db)
+                    .delete(on: req.db)
                     .transform(to: HTTPStatus.ok)
         }
     }

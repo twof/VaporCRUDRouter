@@ -56,12 +56,12 @@ extension Crudable {
         relationConfiguration: ((CrudParentController<ChildType, ParentType>) -> Void)?=nil
     ) where
         ParentType: Model & Content,
-        ChildType.Database == ParentType.Database,
+//        ChildType.Database == ParentType.Database,
         ParentType.IDValue: LosslessStringConvertible {
             let baseIdPath = self.path.appending(.parameter("\(ChildType.schema)ID"))
             let adjustedPath = path.adjustedPath(for: ParentType.self)
 
-            let fullPath = baseIdPath.appending(adjustedPath)
+            let fullPath = baseIdPath + adjustedPath
 
 
             let allMethods: Set<ParentRouterMethod> = Set([.read, .update])
@@ -91,7 +91,7 @@ extension Crudable {
             let baseIdPath = self.path.appending(.parameter("\(ChildType.schema)ID"))
             let adjustedPath = path.adjustedPath(for: ChildChildType.self)
 
-            let fullPath = baseIdPath.appending(adjustedPath)
+            let fullPath = baseIdPath + adjustedPath
 
             let allMethods: Set<ChildrenRouterMethod> = Set([.read, .update])
             let controller: CrudChildrenController<ChildChildType, ChildType>
@@ -122,7 +122,7 @@ extension Crudable {
             let baseIdPath = self.path.appending(.parameter("\(ChildType.schema)ID"))
             let adjustedPath = path.adjustedPath(for: ChildChildType.self)
 
-            let fullPath = baseIdPath.appending(adjustedPath)
+            let fullPath = baseIdPath + adjustedPath
 
             let allMethods: Set<ModifiableSiblingRouterMethod> = Set([.read, .readAll, .create, .update, .delete])
             let controller: CrudSiblingsController<ChildChildType, ChildType, ThroughType>
@@ -154,7 +154,7 @@ extension Crudable {
             let baseIdPath = self.path.appending(.parameter("\(ChildType.schema)ID"))
             let adjustedPath = path.adjustedPath(for: ChildChildType.self)
 
-            let fullPath = baseIdPath.appending(adjustedPath)
+            let fullPath = baseIdPath + adjustedPath
 
             let allMethods: Set<ModifiableSiblingRouterMethod> = Set([.read, .readAll, .create, .update, .delete])
             let controller: CrudSiblingsController<ChildChildType, ChildType, ThroughType>

@@ -2,7 +2,7 @@ import Vapor
 import Fluent
 
 public struct CrudChildrenController<ChildT: Model & Content, ParentT: Model & Content>: CrudChildrenControllerProtocol, Crudable where ChildT.IDValue: LosslessStringConvertible, ParentT.IDValue: LosslessStringConvertible {
-    public var db: Database
+//    public var db: Database
     public var router: RoutesBuilder
     
     public typealias ParentType = ParentT

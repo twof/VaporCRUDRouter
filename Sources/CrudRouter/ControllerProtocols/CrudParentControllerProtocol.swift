@@ -5,7 +5,7 @@ public protocol CrudParentControllerProtocol {
     associatedtype ParentType: Model & Content where ParentType.IDValue: LosslessStringConvertible
     associatedtype ChildType: Model & Content where ChildType.IDValue: LosslessStringConvertible
     
-    var db: Database { get }
+//    var db: Database { get }
 
     var relation: KeyPath<ChildType, Parent<ParentType>> { get }
 
@@ -17,8 +17,8 @@ public extension CrudParentControllerProtocol {
     func index(_ req: Request) throws -> EventLoopFuture<ParentType> {
         let childId: ChildType.IDValue = try req.getId()
 
-        return ChildType.find(childId, on: db).unwrap(or: Abort(.notFound)).flatMap { child in
-            child[keyPath: self.relation].get(on: self.db)
+        return ChildType.find(childId, on: req.db).unwrap(or: Abort(.notFound)).flatMap { child in
+            child[keyPath: self.relation].get(on: req.db)
         }
     }
 
@@ -26,10 +26,10 @@ public extension CrudParentControllerProtocol {
         let childId: ChildType.IDValue = try req.getId()
 
         return ChildType
-            .find(childId, on: db)
+            .find(childId, on: req.db)
             .unwrap(or: Abort(.notFound))
             .flatMap { child in
-                return child[keyPath: self.relation].get(on: self.db)
+                return child[keyPath: self.relation].get(on: req.db)
         }
     }
 }
