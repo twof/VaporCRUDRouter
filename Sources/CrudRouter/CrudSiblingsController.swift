@@ -11,13 +11,13 @@ public struct CrudSiblingsController<ChildT: Model & Content, ParentT: Model & C
     public typealias ChildType = ChildT
 
     public var siblings: KeyPath<ParentType, Siblings<ParentType, ChildType, ThroughType>>
-    public let path: [PathComponentsRepresentable]
+    public let path: [PathComponent]
     public let router: RoutesBuilder
     let activeMethods: Set<ModifiableSiblingRouterMethod>
 
     init(
         siblingRelation: KeyPath<ParentType, Siblings<ParentType, ChildType, ThroughType>>,
-        path: [PathComponentsRepresentable],
+        path: [PathComponent],
         router: RoutesBuilder,
         activeMethods: Set<ModifiableSiblingRouterMethod>
     ) {
@@ -30,44 +30,44 @@ public struct CrudSiblingsController<ChildT: Model & Content, ParentT: Model & C
 
 extension CrudSiblingsController: RouteCollection {}
 
-public extension CrudSiblingsController where ThroughType.Right == ParentType,
-ThroughType.Left == ChildType {
-    func boot(routes router: RoutesBuilder) throws {
-        let parentPath = self.path
-        let parentIdPath = self.path.appending(ParentType.IDValue.parameter)
-
-        self.activeMethods.forEach {
-            $0.register(
-                router: router,
-                controller: self,
-                path: parentPath,
-                idPath: parentIdPath
-            )
-        }
-    }
-}
-
-public extension CrudSiblingsController where ThroughType.Left == ParentType,
-ThroughType.Right == ChildType {
-    func boot(routes router: RoutesBuilder) throws {
-        let parentPath = self.path
-        let parentIdPath = self.path.appending(ParentType.IDValue.parameter)
-
-        self.activeMethods.forEach {
-            $0.register(
-                router: router,
-                controller: self,
-                path: parentPath,
-                idPath: parentIdPath
-            )
-        }
-    }
-}
+//public extension CrudSiblingsController where ThroughType.Right == ParentType,
+//ThroughType.Left == ChildType {
+//    func boot(routes router: RoutesBuilder) throws {
+//        let parentPath = self.path
+//        let parentIdPath = self.path.appending(ParentType.IDValue.parameter)
+//
+//        self.activeMethods.forEach {
+//            $0.register(
+//                router: router,
+//                controller: self,
+//                path: parentPath,
+//                idPath: parentIdPath
+//            )
+//        }
+//    }
+//}
+//
+//public extension CrudSiblingsController where ThroughType.Left == ParentType,
+//ThroughType.Right == ChildType {
+//    func boot(routes router: RoutesBuilder) throws {
+//        let parentPath = self.path
+//        let parentIdPath = self.path.appending(ParentType.IDValue.parameter)
+//
+//        self.activeMethods.forEach {
+//            $0.register(
+//                router: router,
+//                controller: self,
+//                path: parentPath,
+//                idPath: parentIdPath
+//            )
+//        }
+//    }
+//}
 
 public extension CrudSiblingsController {
     func boot(routes router: RoutesBuilder) throws {
         let parentPath = self.path
-        let parentIdPath = self.path.appending(ParentType.IDValue.parameter)
+        let parentIdPath = self.path.appending(.parameter("\(ParentType.schema)ID"))
 
         router.get(parentIdPath, use: self.index)
         router.get(parentPath, use: self.indexAll)

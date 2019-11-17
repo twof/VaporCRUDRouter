@@ -2,10 +2,10 @@ import Vapor
 import Fluent
 
 public protocol Crudable: ControllerProtocol {
-    associatedtype ChildType: Model, Content where ChildType.IDValue: Parameter
+    associatedtype ChildType: Model, Content
 
     func crud<ParentType>(
-        at path: PathComponentsRepresentable...,
+        at path: PathComponent...,
         parent relation: KeyPath<ChildType, Parent<ParentType>>,
         _ either: OnlyExceptEither<ParentRouterMethod>,
         relationConfiguration: ((CrudParentController<ChildType, ParentType>) -> Void)?
@@ -15,17 +15,16 @@ public protocol Crudable: ControllerProtocol {
         ParentType.IDValue: LosslessStringConvertible
 
     func crud<ChildChildType>(
-        at path: PathComponentsRepresentable...,
+        at path: PathComponent...,
         children relation: KeyPath<ChildType, Children<ChildType, ChildChildType>>,
         _ either: OnlyExceptEither<ChildrenRouterMethod>,
         relationConfiguration: ((CrudChildrenController<ChildChildType, ChildType>) -> Void)?
     ) where
         ChildChildType: Model & Content,
-        ChildType.Database == ChildChildType.Database,
-        ChildChildType.IDValue: Parameter
+        ChildType.Database == ChildChildType.Database
 
     func crud<ChildChildType, ThroughType>(
-        at path: PathComponentsRepresentable...,
+        at path: PathComponent...,
         siblings relation: KeyPath<ChildType, Siblings<ChildType, ChildChildType, ThroughType>>,
         _ either: OnlyExceptEither<ModifiableSiblingRouterMethod>,
         relationConfiguration: ((CrudSiblingsController<ChildChildType, ChildType, ThroughType>) -> Void)?
@@ -37,7 +36,7 @@ public protocol Crudable: ControllerProtocol {
         ThroughType.Right == ChildChildType
 
     func crud<ChildChildType, ThroughType>(
-        at path: PathComponentsRepresentable...,
+        at path: PathComponent...,
         siblings relation: KeyPath<ChildType, Siblings<ChildType, ChildChildType, ThroughType>>,
         _ either: OnlyExceptEither<ModifiableSiblingRouterMethod>,
         relationConfiguration: ((CrudSiblingsController<ChildChildType, ChildType, ThroughType>) -> Void)?
@@ -51,7 +50,7 @@ public protocol Crudable: ControllerProtocol {
 
 extension Crudable {
     public func crud<ParentType>(
-        at path: PathComponentsRepresentable...,
+        at path: PathComponent...,
         parent relation: KeyPath<ChildType, Parent<ParentType>>,
         _ either: OnlyExceptEither<ParentRouterMethod> = .only([.read, .update]),
         relationConfiguration: ((CrudParentController<ChildType, ParentType>) -> Void)?=nil
@@ -59,7 +58,7 @@ extension Crudable {
         ParentType: Model & Content,
         ChildType.Database == ParentType.Database,
         ParentType.IDValue: LosslessStringConvertible {
-            let baseIdPath = self.path.appending(ChildType.IDValue.parameter)
+            let baseIdPath = self.path.appending(.parameter("\(ChildType.schema)ID"))
             let adjustedPath = path.adjustedPath(for: ParentType.self)
 
             let fullPath = baseIdPath.appending(adjustedPath)
@@ -81,7 +80,7 @@ extension Crudable {
     }
 
     public func crud<ChildChildType>(
-        at path: PathComponentsRepresentable...,
+        at path: PathComponent...,
         children relation: KeyPath<ChildType, Children<ChildType, ChildChildType>>,
         _ either: OnlyExceptEither<ChildrenRouterMethod> = .only([.read, .readAll, .create, .update, .delete]),
         relationConfiguration: ((CrudChildrenController<ChildChildType, ChildType>) -> Void)?=nil
@@ -89,7 +88,7 @@ extension Crudable {
         ChildChildType: Model & Content,
         ChildType.Database == ChildChildType.Database,
         ChildChildType.IDValue: LosslessStringConvertible {
-            let baseIdPath = self.path.appending(ChildType.IDValue.parameter)
+            let baseIdPath = self.path.appending(.parameter("\(ChildType.schema)ID"))
             let adjustedPath = path.adjustedPath(for: ChildChildType.self)
 
             let fullPath = baseIdPath.appending(adjustedPath)
@@ -110,7 +109,7 @@ extension Crudable {
     }
 
     public func crud<ChildChildType, ThroughType>(
-        at path: PathComponentsRepresentable...,
+        at path: PathComponent...,
         siblings relation: KeyPath<ChildType, Siblings<ChildType, ChildChildType, ThroughType>>,
         _ either: OnlyExceptEither<ModifiableSiblingRouterMethod> = .only([.read, .readAll, .create, .update, .delete]),
         relationConfiguration: ((CrudSiblingsController<ChildChildType, ChildType, ThroughType>) -> Void)?=nil
@@ -120,7 +119,7 @@ extension Crudable {
         ThroughType: Model,
         ThroughType.Left == ChildType,
         ThroughType.Right == ChildChildType {
-            let baseIdPath = self.path.appending(ChildType.IDValue.parameter)
+            let baseIdPath = self.path.appending(.parameter("\(ChildType.schema)ID"))
             let adjustedPath = path.adjustedPath(for: ChildChildType.self)
 
             let fullPath = baseIdPath.appending(adjustedPath)
@@ -142,7 +141,7 @@ extension Crudable {
     }
 
     public func crud<ChildChildType, ThroughType>(
-        at path: PathComponentsRepresentable...,
+        at path: PathComponent...,
         siblings relation: KeyPath<ChildType, Siblings<ChildType, ChildChildType, ThroughType>>,
         _ either: OnlyExceptEither<ModifiableSiblingRouterMethod> = .only([.read, .readAll, .create, .update, .delete]),
         relationConfiguration: ((CrudSiblingsController<ChildChildType, ChildType, ThroughType>) -> Void)?=nil
@@ -152,7 +151,7 @@ extension Crudable {
         ThroughType: Model,
         ThroughType.Right == ChildType,
         ThroughType.Left == ChildChildType {
-            let baseIdPath = self.path.appending(ChildType.IDValue.parameter)
+            let baseIdPath = self.path.appending(.parameter("\(ChildType.schema)ID"))
             let adjustedPath = path.adjustedPath(for: ChildChildType.self)
 
             let fullPath = baseIdPath.appending(adjustedPath)

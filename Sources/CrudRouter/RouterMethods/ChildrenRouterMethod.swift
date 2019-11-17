@@ -8,10 +8,10 @@ public enum ChildrenRouterMethod {
     case delete
 
     func register<ChildType, ParentType>(
-        router: Router,
+        router: RoutesBuilder,
         controller: CrudChildrenController<ChildType, ParentType>,
-        path: [PathComponentsRepresentable],
-        idPath: [PathComponentsRepresentable]
+        path: [PathComponent],
+        idPath: [PathComponent]
     ) {
         switch self {
         case .read:

@@ -9,12 +9,12 @@ public struct CrudChildrenController<ChildT: Model & Content, ParentT: Model & C
     public typealias ChildType = ChildT
 
     public var children: KeyPath<ParentT, Children<ParentT, ChildT>>
-    public let path: [PathComponentsRepresentable]
+    public let path: [PathComponent]
     let activeMethods: Set<ChildrenRouterMethod>
 
     init(
         childrenRelation: KeyPath<ParentT, Children<ParentT, ChildT>>,
-        path: [PathComponentsRepresentable],
+        path: [PathComponent],
         router: RoutesBuilder,
         activeMethods: Set<ChildrenRouterMethod>
     ) {
@@ -26,9 +26,9 @@ public struct CrudChildrenController<ChildT: Model & Content, ParentT: Model & C
 }
 
 extension CrudChildrenController: RouteCollection {
-    public func boot(routes router: RoutesBuilder) throws {
+    public func boot(routes routesBuilder: RoutesBuilder) throws {
         let parentPath = self.path
-        let parentIdPath = self.path.appending(ParentType.IDValue.parameter)
+        let parentIdPath = self.path.appending(.parameter("\(ParentType.schema)ID"))
 
         self.activeMethods.forEach {
             $0.register(

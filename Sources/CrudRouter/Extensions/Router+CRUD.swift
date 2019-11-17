@@ -3,11 +3,11 @@ import Fluent
 
 public extension Router {
     public func crud<ModelType: Model & Content>(
-        _ path: PathComponentsRepresentable...,
+        _ path: PathComponent...,
         register type: ModelType.Type,
         _ either: OnlyExceptEither<RouterMethod> = .only([.read, .readAll, .create, .update, .delete]),
         relationConfiguration: ((CrudController<ModelType>) -> ())?=nil
-    ) where ModelType.IDValue: Parameter {
+    ) {
         let allMethods: Set<RouterMethod> = Set([.read, .readAll, .create, .update, .delete])
         let controller: CrudController<ModelType>
 

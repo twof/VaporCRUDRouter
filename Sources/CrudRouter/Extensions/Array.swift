@@ -8,10 +8,10 @@ public extension Array {
     }
 }
 
-extension Array where Element == PathComponentsRepresentable {
-    func adjustedPath<T>(for type: T.Type) -> [PathComponentsRepresentable] {
+extension Array where Element == PathComponent {
+    func adjustedPath<T>(for type: T.Type) -> [PathComponent] {
         return self.count == 0
-            ? [String(describing: T.self).snakeCased()! as PathComponentsRepresentable]
+            ? [String(describing: T.self).snakeCased()! as PathComponent]
             : self
     }
 }

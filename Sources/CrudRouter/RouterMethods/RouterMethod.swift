@@ -8,10 +8,10 @@ public enum RouterMethod {
     case delete
 
     func register<ModelType>(
-        router: Router,
+        router: RoutesBuilder,
         controller: CrudController<ModelType>,
-        path: [PathComponentsRepresentable],
-        idPath: [PathComponentsRepresentable]
+        path: [PathComponent],
+        idPath: [PathComponent]
     ) {
         switch self {
         case .read:

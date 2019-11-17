@@ -9,10 +9,10 @@ public enum ModifiableSiblingRouterMethod {
     case delete
 
     func register<ChildType, ParentType, ThroughType: ModifiablePivot>(
-        router: Router,
+        router: RoutesBuilder,
         controller: CrudSiblingsController<ChildType, ParentType, ThroughType>,
-        path: [PathComponentsRepresentable],
-        idPath: [PathComponentsRepresentable]
+        path: [PathComponent],
+        idPath: [PathComponent]
     ) where ThroughType.Left == ParentType,
         ThroughType.Right == ChildType {
             switch self {
@@ -30,10 +30,10 @@ public enum ModifiableSiblingRouterMethod {
     }
 
     func register<ChildType, ParentType, ThroughType: ModifiablePivot>(
-        router: Router,
+        router: RoutesBuilder,
         controller: CrudSiblingsController<ChildType, ParentType, ThroughType>,
-        path: [PathComponentsRepresentable],
-        idPath: [PathComponentsRepresentable]
+        path: [PathComponent],
+        idPath: [PathComponent]
     ) where ThroughType.Left == ChildType,
         ThroughType.Right == ParentType {
             switch self {
