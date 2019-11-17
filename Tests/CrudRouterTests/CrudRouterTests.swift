@@ -15,28 +15,28 @@ extension PathComponent {
 }
 
 extension Array where Element: Model, Element.Database: TransactionSupporting {
-    func save(on conn: Element.Database.Connection) -> Future<[Element]> {
+    func save(on conn: Element.Database.Connection) -> EventLoopFuture<[Element]> {
         let databaseIdentifier = Element.defaultDatabase!
 
-        return conn.transaction(on: databaseIdentifier) { (dbConn) -> EventLoopFuture<[Element]> in
+        return conn.transaction(on: databaseIdentifier) { (dbConn) -> EventLoopEventLoopFuture<[Element]> in
             return self.map { $0.save(on: dbConn) }.flatten(on: dbConn)
         }
     }
 
-    func delete(on conn: Element.Database.Connection) -> Future<[Element]> {
+    func delete(on conn: Element.Database.Connection) -> EventLoopFuture<[Element]> {
         let databaseIdentifier = Element.defaultDatabase!
 
-        return conn.transaction(on: databaseIdentifier) { (dbConn) -> EventLoopFuture<[Element]> in
+        return conn.transaction(on: databaseIdentifier) { (dbConn) -> EventLoopEventLoopFuture<[Element]> in
             return self.map { element in
                 return element.delete(on: dbConn).transform(to: element)
                 }.flatten(on: dbConn)
         }
     }
 
-    func create(on conn: Element.Database.Connection) -> Future<[Element]> {
+    func create(on conn: Element.Database.Connection) -> EventLoopFuture<[Element]> {
         let databaseIdentifier = Element.defaultDatabase!
 
-        return conn.transaction(on: databaseIdentifier) { (dbConn) -> EventLoopFuture<[Element]> in
+        return conn.transaction(on: databaseIdentifier) { (dbConn) -> EventLoopEventLoopFuture<[Element]> in
             return self.map { $0.create(on: dbConn) }.flatten(on: dbConn)
         }
     }
@@ -46,11 +46,11 @@ extension Array where Element: Model, Element.Database: TransactionSupporting {
 struct TestSeeding: SQLiteMigration {
     static let galaxies = [Galaxy(name: "Milky Way")]
 
-    static func prepare(on conn: SQLiteConnection) -> EventLoopFuture<Void> {
+    static func prepare(on conn: SQLiteConnection) -> EventLoopEventLoopFuture<Void> {
         return TestSeeding.galaxies.create(on: conn).transform(to: ())
     }
 
-    static func revert(on conn: SQLiteConnection) -> EventLoopFuture<Void> {
+    static func revert(on conn: SQLiteConnection) -> EventLoopEventLoopFuture<Void> {
         return TestSeeding.galaxies.delete(on: conn).transform(to: ())
     }
 }

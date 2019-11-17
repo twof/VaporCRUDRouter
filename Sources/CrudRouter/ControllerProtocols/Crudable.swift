@@ -2,17 +2,17 @@ import Vapor
 import Fluent
 
 public protocol Crudable: ControllerProtocol {
-    associatedtype ChildType: Model, Content where ChildType.ID: Parameter
+    associatedtype ChildType: Model, Content where ChildType.IDValue: Parameter
 
     func crud<ParentType>(
         at path: PathComponentsRepresentable...,
-        parent relation: KeyPath<ChildType, Parent<ChildType, ParentType>>,
+        parent relation: KeyPath<ChildType, Parent<ParentType>>,
         _ either: OnlyExceptEither<ParentRouterMethod>,
         relationConfiguration: ((CrudParentController<ChildType, ParentType>) -> Void)?
     ) where
         ParentType: Model & Content,
         ChildType.Database == ParentType.Database,
-        ParentType.ID: Parameter
+        ParentType.IDValue: LosslessStringConvertible
 
     func crud<ChildChildType>(
         at path: PathComponentsRepresentable...,
@@ -22,7 +22,7 @@ public protocol Crudable: ControllerProtocol {
     ) where
         ChildChildType: Model & Content,
         ChildType.Database == ChildChildType.Database,
-        ChildChildType.ID: Parameter
+        ChildChildType.IDValue: Parameter
 
     func crud<ChildChildType, ThroughType>(
         at path: PathComponentsRepresentable...,
@@ -31,11 +31,8 @@ public protocol Crudable: ControllerProtocol {
         relationConfiguration: ((CrudSiblingsController<ChildChildType, ChildType, ThroughType>) -> Void)?
     ) where
         ChildChildType: Content,
-        ChildType.Database == ThroughType.Database,
-        ChildChildType.ID: Parameter,
-        ThroughType: ModifiablePivot,
-        ThroughType.Database: JoinSupporting,
-        ThroughType.Database == ChildChildType.Database,
+        ChildChildType.IDValue: LosslessStringConvertible,
+        ThroughType: Model,
         ThroughType.Left == ChildType,
         ThroughType.Right == ChildChildType
 
@@ -46,11 +43,8 @@ public protocol Crudable: ControllerProtocol {
         relationConfiguration: ((CrudSiblingsController<ChildChildType, ChildType, ThroughType>) -> Void)?
     ) where
         ChildChildType: Content,
-        ChildType.Database == ThroughType.Database,
-        ChildChildType.ID: Parameter,
-        ThroughType: ModifiablePivot,
-        ThroughType.Database: JoinSupporting,
-        ThroughType.Database == ChildChildType.Database,
+        ChildChildType.IDValue: LosslessStringConvertible,
+        ThroughType: Model,
         ThroughType.Right == ChildType,
         ThroughType.Left == ChildChildType
 }
@@ -58,14 +52,14 @@ public protocol Crudable: ControllerProtocol {
 extension Crudable {
     public func crud<ParentType>(
         at path: PathComponentsRepresentable...,
-        parent relation: KeyPath<ChildType, Parent<ChildType, ParentType>>,
+        parent relation: KeyPath<ChildType, Parent<ParentType>>,
         _ either: OnlyExceptEither<ParentRouterMethod> = .only([.read, .update]),
         relationConfiguration: ((CrudParentController<ChildType, ParentType>) -> Void)?=nil
     ) where
         ParentType: Model & Content,
         ChildType.Database == ParentType.Database,
-        ParentType.ID: Parameter {
-            let baseIdPath = self.path.appending(ChildType.ID.parameter)
+        ParentType.IDValue: LosslessStringConvertible {
+            let baseIdPath = self.path.appending(ChildType.IDValue.parameter)
             let adjustedPath = path.adjustedPath(for: ParentType.self)
 
             let fullPath = baseIdPath.appending(adjustedPath)
@@ -81,7 +75,7 @@ extension Crudable {
                 controller = CrudParentController(relation: relation, path: fullPath, router: self.router, activeMethods: allMethods.subtracting(Set(methods)))
             }
 
-            do { try controller.boot(router: self.router) } catch { fatalError("I have no reason to expect boot to throw") }
+            do { try controller.boot(routes: self.router) } catch { fatalError("I have no reason to expect boot to throw") }
 
             relationConfiguration?(controller)
     }
@@ -94,8 +88,8 @@ extension Crudable {
     ) where
         ChildChildType: Model & Content,
         ChildType.Database == ChildChildType.Database,
-        ChildChildType.ID: Parameter {
-            let baseIdPath = self.path.appending(ChildType.ID.parameter)
+        ChildChildType.IDValue: LosslessStringConvertible {
+            let baseIdPath = self.path.appending(ChildType.IDValue.parameter)
             let adjustedPath = path.adjustedPath(for: ChildChildType.self)
 
             let fullPath = baseIdPath.appending(adjustedPath)
@@ -110,7 +104,7 @@ extension Crudable {
                 controller = CrudChildrenController<ChildChildType, ChildType>(childrenRelation: relation, path: fullPath, router: self.router, activeMethods: allMethods.subtracting(Set(methods)))
             }
 
-            do { try controller.boot(router: self.router) } catch { fatalError("I have no reason to expect boot to throw") }
+            do { try controller.boot(routes: self.router) } catch { fatalError("I have no reason to expect boot to throw") }
 
             relationConfiguration?(controller)
     }
@@ -122,14 +116,11 @@ extension Crudable {
         relationConfiguration: ((CrudSiblingsController<ChildChildType, ChildType, ThroughType>) -> Void)?=nil
     ) where
         ChildChildType: Content,
-        ChildType.Database == ThroughType.Database,
-        ChildChildType.ID: Parameter,
-        ThroughType: ModifiablePivot,
-        ThroughType.Database: JoinSupporting,
-        ThroughType.Database == ChildChildType.Database,
+        ChildChildType.IDValue: LosslessStringConvertible,
+        ThroughType: Model,
         ThroughType.Left == ChildType,
         ThroughType.Right == ChildChildType {
-            let baseIdPath = self.path.appending(ChildType.ID.parameter)
+            let baseIdPath = self.path.appending(ChildType.IDValue.parameter)
             let adjustedPath = path.adjustedPath(for: ChildChildType.self)
 
             let fullPath = baseIdPath.appending(adjustedPath)
@@ -145,7 +136,7 @@ extension Crudable {
                 controller = CrudSiblingsController<ChildChildType, ChildType, ThroughType>(siblingRelation: relation, path: fullPath, router: self.router, activeMethods: allMethods.subtracting(Set(methods)))
             }
 
-             do { try controller.boot(router: self.router) } catch { fatalError("I have no reason to expect boot to throw") }
+             do { try controller.boot(routes: self.router) } catch { fatalError("I have no reason to expect boot to throw") }
 
             relationConfiguration?(controller)
     }
@@ -157,14 +148,11 @@ extension Crudable {
         relationConfiguration: ((CrudSiblingsController<ChildChildType, ChildType, ThroughType>) -> Void)?=nil
     ) where
         ChildChildType: Content,
-        ChildType.Database == ThroughType.Database,
-        ChildChildType.ID: Parameter,
-        ThroughType: ModifiablePivot,
-        ThroughType.Database: JoinSupporting,
-        ThroughType.Database == ChildChildType.Database,
+        ChildChildType.IDValue: LosslessStringConvertible,
+        ThroughType: Model,
         ThroughType.Right == ChildType,
         ThroughType.Left == ChildChildType {
-            let baseIdPath = self.path.appending(ChildType.ID.parameter)
+            let baseIdPath = self.path.appending(ChildType.IDValue.parameter)
             let adjustedPath = path.adjustedPath(for: ChildChildType.self)
 
             let fullPath = baseIdPath.appending(adjustedPath)
@@ -179,7 +167,7 @@ extension Crudable {
                 controller = CrudSiblingsController<ChildChildType, ChildType, ThroughType>(siblingRelation: relation, path: fullPath, router: self.router, activeMethods: allMethods.subtracting(Set(methods)))
             }
 
-            do { try controller.boot(router: self.router) } catch { fatalError("I have no reason to expect boot to throw") }
+            do { try controller.boot(routes: self.router) } catch { fatalError("I have no reason to expect boot to throw") }
 
             relationConfiguration?(controller)
     }

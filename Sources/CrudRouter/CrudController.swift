@@ -3,19 +3,19 @@ import Fluent
 
 public protocol ControllerProtocol {
     var path: [PathComponentsRepresentable] { get }
-    var router: Router { get }
+    var router: RoutesBuilder { get }
 }
 
-public struct CrudController<ModelT: Model & Content>: CrudControllerProtocol, Crudable where ModelT.ID: Parameter {
+public struct CrudController<ModelT: Model & Content>: CrudControllerProtocol, Crudable where ModelT.IDValue: LosslessStringConvertible {
     public typealias ChildType = ModelT
-
     public typealias ModelType = ModelT
 
+    public let db: Database
     public let path: [PathComponentsRepresentable]
-    public let router: Router
+    public let router: RoutesBuilder
     let activeMethods: Set<RouterMethod>
 
-    init(path: [PathComponentsRepresentable], router: Router, activeMethods: Set<RouterMethod>) {
+    init(path: [PathComponentsRepresentable], router: RoutesBuilder, activeMethods: Set<RouterMethod>) {
         let adjustedPath = path.adjustedPath(for: ModelType.self)
 
         self.path = adjustedPath
@@ -25,9 +25,9 @@ public struct CrudController<ModelT: Model & Content>: CrudControllerProtocol, C
 }
 
 extension CrudController: RouteCollection {
-    public func boot(router: Router) throws {
+    public func boot(routes router: RoutesBuilder) throws {
         let basePath = self.path
-        let baseIdPath = self.path.appending(ModelType.ID.parameter)
+        let baseIdPath = self.path.appending(ModelType.IDValue.parameter)
 
         self.activeMethods.forEach {
             $0.register(

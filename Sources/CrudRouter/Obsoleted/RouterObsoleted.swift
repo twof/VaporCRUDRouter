@@ -7,5 +7,5 @@ public extension Router {
         _ path: PathComponentsRepresentable...,
         for type: ModelType.Type,
         relationConfiguration: ((CrudController<ModelType>) throws -> ())?=nil
-    ) throws where ModelType.ID: Parameter {}
+    ) throws where ModelType.IDValue: Parameter {}
 }

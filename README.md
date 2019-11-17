@@ -119,7 +119,7 @@ GET /todo
 GET /todo/:id/tag/:id
 ```
 
-### Future features
+### EventLoopFuture features
 - query parameter support
 - PATCH support
 - more fine grained response statuses

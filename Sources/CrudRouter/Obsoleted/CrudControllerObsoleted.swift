@@ -6,12 +6,12 @@ extension CrudController {
     @available(swift, obsoleted: 4.0, renamed: "crud(at:parent:relationConfiguration:)")
     public func crudRegister<ParentType>(
         at path: PathComponentsRepresentable...,
-        forParent relation: KeyPath<ModelType, Parent<ModelType, ParentType>>,
+        forParent relation: KeyPath<ModelType, Parent<ParentType>>,
         relationConfiguration: ((CrudParentController<ModelType, ParentType>) throws -> Void)?=nil
     ) throws where
         ParentType: Model & Content,
         ModelType.Database == ParentType.Database,
-        ParentType.ID: Parameter {
+        ParentType.IDValue: Parameter {
             fatalError()
     }
 }
@@ -27,7 +27,7 @@ extension CrudController {
     ) throws where
         ChildType: Model & Content,
         ModelType.Database == ChildType.Database,
-        ChildType.ID: Parameter {
+        ChildType.IDValue: Parameter {
             fatalError()
     }
 }
@@ -42,7 +42,7 @@ public extension CrudController {
     ) throws where
         ChildType: Content,
         ModelType.Database == ThroughType.Database,
-        ChildType.ID: Parameter,
+        ChildType.IDValue: Parameter,
         ThroughType: ModifiablePivot,
         ThroughType.Database: JoinSupporting,
         ThroughType.Database == ChildType.Database,
@@ -59,7 +59,7 @@ public extension CrudController {
     ) throws where
         ChildType: Content,
         ModelType.Database == ThroughType.Database,
-        ChildType.ID: Parameter,
+        ChildType.IDValue: Parameter,
         ThroughType: ModifiablePivot,
         ThroughType.Database: JoinSupporting,
         ThroughType.Database == ChildType.Database,

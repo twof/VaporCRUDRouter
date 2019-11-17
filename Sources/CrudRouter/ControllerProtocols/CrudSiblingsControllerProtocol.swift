@@ -2,55 +2,55 @@ import Vapor
 import Fluent
 
 public protocol CrudSiblingsControllerProtocol {
-    associatedtype ParentType: Model & Content where ParentType.ID: Parameter
-    associatedtype ChildType: Model & Content where ChildType.ID: Parameter, ChildType.Database == ParentType.Database
-    associatedtype ThroughType: ModifiablePivot where
-        ThroughType.Database: JoinSupporting,
-        ChildType.Database == ThroughType.Database
+    associatedtype ParentType: Model & Content where ParentType.IDValue: LosslessStringConvertible
+    associatedtype ChildType: Model & Content where ChildType.IDValue: LosslessStringConvertible
+    associatedtype ThroughType: Model
+    
+    var db: Database { get }
 
     var siblings: KeyPath<ParentType, Siblings<ParentType, ChildType, ThroughType>> { get }
 
-    func index(_ req: Request) throws -> Future<ChildType>
-    func indexAll(_ req: Request) throws -> Future<[ChildType]>
-    func update(_ req: Request) throws -> Future<ChildType>
+    func index(_ req: Request) throws -> EventLoopFuture<ChildType>
+    func indexAll(_ req: Request) throws -> EventLoopFuture<[ChildType]>
+    func update(_ req: Request) throws -> EventLoopFuture<ChildType>
 }
 
 public extension CrudSiblingsControllerProtocol {
-    func index(_ req: Request) throws -> Future<ChildType> {
-        let parentId: ParentType.ID = try req.getId()
-        let childId: ChildType.ID = try req.getId()
+    func index(_ req: Request) throws -> EventLoopFuture<ChildType> {
+        let parentId: ParentType.IDValue = try req.getId()
+        let childId: ChildType.IDValue = try req.getId()
 
-        return ParentType.find(parentId, on: req).unwrap(or: Abort(.notFound)).flatMap { parent -> Future<ChildType> in
+        return ParentType.find(parentId, on: db).unwrap(or: Abort(.notFound)).flatMap { parent -> EventLoopFuture<ChildType> in
 
             return try parent[keyPath: self.siblings]
-                .query(on: req)
+                .query(on: self.db)
                 .filter(\ChildType.fluentID == childId)
                 .first()
                 .unwrap(or: Abort(.notFound))
         }
     }
 
-    func indexAll(_ req: Request) throws -> Future<[ChildType]> {
-        let parentId: ParentType.ID = try req.getId()
+    func indexAll(_ req: Request) throws -> EventLoopFuture<[ChildType]> {
+        let parentId: ParentType.IDValue = try req.getId()
 
-        return ParentType.find(parentId, on: req).unwrap(or: Abort(.notFound)).flatMap { parent -> Future<[ChildType]> in
+        return ParentType.find(parentId, on: db).unwrap(or: Abort(.notFound)).flatMap { parent -> EventLoopFuture<[ChildType]> in
             let siblingsRelation = parent[keyPath: self.siblings]
             return try siblingsRelation
-                .query(on: req)
+                .query(on: self.db)
                 .all()
         }
     }
 
-    func update(_ req: Request) throws -> Future<ChildType> {
-        let parentId: ParentType.ID = try req.getId()
-        let childId: ChildType.ID = try req.getId()
+    func update(_ req: Request) throws -> EventLoopFuture<ChildType> {
+        let parentId: ParentType.IDValue = try req.getId()
+        let childId: ChildType.IDValue = try req.getId()
 
         return ParentType
-            .find(parentId, on: req)
+            .find(parentId, on: db)
             .unwrap(or: Abort(.notFound))
-            .flatMap { parent -> Future<ChildType> in
+            .flatMap { parent -> EventLoopFuture<ChildType> in
                 return try parent[keyPath: self.siblings]
-                    .query(on: req)
+                    .query(on: self.db)
                     .filter(\ChildType.fluentID == childId)
                     .first()
                     .unwrap(or: Abort(.notFound))
@@ -58,7 +58,7 @@ public extension CrudSiblingsControllerProtocol {
                 return try req.content.decode(ChildType.self).flatMap { newChild in
                     var temp = newChild
                     temp.fluentID = oldChild.fluentID
-                    return temp.update(on: req)
+                    return temp.update(on: self.db)
                 }
         }
     }
@@ -66,26 +66,26 @@ public extension CrudSiblingsControllerProtocol {
 
 public extension CrudSiblingsControllerProtocol where ThroughType.Left == ParentType,
 ThroughType.Right == ChildType {
-    func create(_ req: Request) throws -> Future<ChildType> {
-        let parentId: ParentType.ID = try req.getId()
+    func create(_ req: Request) throws -> EventLoopFuture<ChildType> {
+        let parentId: ParentType.IDValue = try req.getId()
 
-        return ParentType.find(parentId, on: req).unwrap(or: Abort(.notFound)).flatMap { parent -> Future<ChildType> in
+        return ParentType.find(parentId, on: db).unwrap(or: Abort(.notFound)).flatMap { parent -> EventLoopFuture<ChildType> in
 
             return try req.content.decode(ChildType.self).flatMap { child in
                 let relation = parent[keyPath: self.siblings]
-                return relation.attach(child, on: req).transform(to: child)
+                return relation.attach(child, on: self.db).transform(to: child)
             }
         }
     }
 
-    func delete(_ req: Request) throws -> Future<HTTPStatus> {
-        let parentId: ParentType.ID = try req.getId()
-        let childId: ChildType.ID = try req.getId()
+    func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        let parentId: ParentType.IDValue = try req.getId()
+        let childId: ChildType.IDValue = try req.getId()
 
         return ParentType
             .find(parentId, on: req)
             .unwrap(or: Abort(.notFound))
-            .flatMap { parent -> Future<HTTPStatus> in
+            .flatMap { parent -> EventLoopFuture<HTTPStatus> in
                 let siblingsRelation = parent[keyPath: self.siblings]
                 return try siblingsRelation
                     .query(on: req)
@@ -101,10 +101,10 @@ ThroughType.Right == ChildType {
 
 public extension CrudSiblingsControllerProtocol where ThroughType.Right == ParentType,
 ThroughType.Left == ChildType {
-    func create(_ req: Request) throws -> Future<ChildType> {
-        let parentId: ParentType.ID = try req.getId()
+    func create(_ req: Request) throws -> EventLoopFuture<ChildType> {
+        let parentId: ParentType.IDValue = try req.getId()
 
-        return ParentType.find(parentId, on: req).unwrap(or: Abort(.notFound)).flatMap { parent -> Future<ChildType> in
+        return ParentType.find(parentId, on: req).unwrap(or: Abort(.notFound)).flatMap { parent -> EventLoopFuture<ChildType> in
 
             return try req.content.decode(ChildType.self).flatMap { child in
                 return child.create(on: req)
@@ -115,14 +115,14 @@ ThroughType.Left == ChildType {
         }
     }
 
-    func delete(_ req: Request) throws -> Future<HTTPStatus> {
-        let parentId: ParentType.ID = try req.getId()
-        let childId: ChildType.ID = try req.getId()
+    func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        let parentId: ParentType.IDValue = try req.getId()
+        let childId: ChildType.IDValue = try req.getId()
 
         return ParentType
             .find(parentId, on: req)
             .unwrap(or: Abort(.notFound))
-            .flatMap { parent -> Future<HTTPStatus> in
+            .flatMap { parent -> EventLoopFuture<HTTPStatus> in
                 let siblingsRelation = parent[keyPath: self.siblings]
                 return try siblingsRelation
                     .query(on: req)

@@ -1,19 +1,21 @@
 import Vapor
 import Fluent
 
-public struct CrudParentController<ChildT: Model & Content, ParentT: Model & Content>: CrudParentControllerProtocol, Crudable where ChildT.ID: Parameter, ParentT.ID: Parameter, ChildT.Database == ParentT.Database {
+public struct CrudParentController<ChildT: Model & Content, ParentT: Model & Content>: CrudParentControllerProtocol, Crudable where ChildT.IDValue: LosslessStringConvertible, ParentT.IDValue: LosslessStringConvertible {
+    public var db: Database
+    
     public typealias ParentType = ParentT
     public typealias ChildType = ChildT
 
-    public let relation: KeyPath<ChildType, Parent<ChildType, ParentType>>
+    public let relation: KeyPath<ChildType, Parent<ParentType>>
     public let path: [PathComponentsRepresentable]
-    public let router: Router
+    public let router: RoutesBuilder
     let activeMethods: Set<ParentRouterMethod>
 
     init(
-        relation: KeyPath<ChildType, Parent<ChildType, ParentType>>,
+        relation: KeyPath<ChildType, Parent<ParentType>>,
         path: [PathComponentsRepresentable],
-        router: Router,
+        router: RoutesBuilder,
         activeMethods: Set<ParentRouterMethod>
     ) {
         self.relation = relation
@@ -24,7 +26,7 @@ public struct CrudParentController<ChildT: Model & Content, ParentT: Model & Con
 }
 
 extension CrudParentController: RouteCollection {
-    public func boot(router: Router) throws {
+    public func boot(routes router: RoutesBuilder) throws {
         let parentPath = self.path
 
         self.activeMethods.forEach {
