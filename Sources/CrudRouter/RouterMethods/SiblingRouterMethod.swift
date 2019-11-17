@@ -8,7 +8,7 @@ public enum ModifiableSiblingRouterMethod {
     case update
     case delete
 
-    func register<ChildType, ParentType, ThroughType: ModifiablePivot>(
+    func register<ChildType, ParentType, ThroughType>(
         router: RoutesBuilder,
         controller: CrudSiblingsController<ChildType, ParentType, ThroughType>,
         path: [PathComponent],
@@ -29,7 +29,7 @@ public enum ModifiableSiblingRouterMethod {
             }
     }
 
-    func register<ChildType, ParentType, ThroughType: ModifiablePivot>(
+    func register<ChildType, ParentType, ThroughType>(
         router: RoutesBuilder,
         controller: CrudSiblingsController<ChildType, ParentType, ThroughType>,
         path: [PathComponent],
