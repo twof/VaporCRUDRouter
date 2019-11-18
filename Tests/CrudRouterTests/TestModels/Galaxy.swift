@@ -1,24 +1,41 @@
 import Vapor
-import FluentSQLite
+import FluentSQLiteDriver
 import CrudRouter
 
-struct Galaxy: SQLiteModel {
-    var id: Int?
-    var name: String
+public final class Galaxy: Model, Content {
+    public static let schema = "galaxies"
 
-    public init(id: Int?=nil, name: String) {
+    public static var migration: Migration {
+        return GalaxyMigration()
+    }
+    
+    @ID(key: "id")
+    public var id: Int?
+
+    @Field(key: "name")
+    public var name: String
+
+    @Children(for: \.$galaxy)
+    public var planets: [Planet]
+
+    public init() { }
+
+    public init(id: Int? = nil, name: String) {
         self.id = id
         self.name = name
     }
 }
 
-extension Galaxy {
-    // this galaxy's related planets
-    var planets: Children<Galaxy, Planet> {
-        return children(\.galaxyID)
+struct GalaxyMigration: Migration {
+    init() {}
+    func prepare(on database: Database) -> EventLoopFuture<Void> {
+        return database.schema("galaxies")
+            .field("id", .int, .identifier(auto: true))
+            .field("name", .string, .required)
+            .create()
+    }
+
+    func revert(on database: Database) -> EventLoopFuture<Void> {
+        return database.schema("galaxies").delete()
     }
 }
-
-extension Galaxy: Content { }
-extension Galaxy: Migration { }
-extension Galaxy: Parameter { }

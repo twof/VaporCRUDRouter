@@ -1,31 +1,40 @@
-import FluentSQLite
+import FluentSQLiteDriver
 import Vapor
 
-public struct Planet: SQLiteModel {
-    public var id: Int?
-    public var name: String
-    public var galaxyID: Int
+public final class Planet: Model, Content {
+    public static let schema = "planets"
 
-    public init(id: Int?=nil, name: String, galaxyID: Int) {
+    @ID(key: "id")
+    public var id: Int?
+
+    @Field(key: "name")
+    public var name: String
+
+    @Parent(key: "galaxy_id")
+    public var galaxy: Galaxy
+
+    @Siblings(through: PlanetTag.self, from: \.$planet, to: \.$tag)
+    public var tags: [Tag]
+
+    public init() { }
+
+    public init(id: Int? = nil, name: String, galaxyID: Galaxy.IDValue) {
         self.id = id
         self.name = name
-        self.galaxyID = galaxyID
+        self.$galaxy.id = galaxyID
     }
 }
 
-extension Planet {
-    // this planet's related galaxy
-    var galaxy: Parent<Planet, Galaxy> {
-        return parent(\.galaxyID)
+public struct PlanetMigration: Migration {
+    public func prepare(on database: Database) -> EventLoopFuture<Void> {
+        return database.schema("planets")
+            .field("id", .int, .identifier(auto: true))
+            .field("name", .string, .required)
+            .field("galaxy_id", .int, .required)
+            .create()
+    }
+
+    public func revert(on database: Database) -> EventLoopFuture<Void> {
+        return database.schema("planets").delete()
     }
 }
-
-extension Planet {
-    // this planet's related tags
-    var tags: Siblings<Planet, Tag, PlanetTag> {
-        return siblings()
-    }
-}
-
-extension Planet: Content { }
-extension Planet: Migration { }

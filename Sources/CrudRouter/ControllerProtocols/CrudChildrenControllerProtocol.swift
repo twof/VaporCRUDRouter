@@ -3,6 +3,14 @@ import FluentKit
 import Fluent
 import NIOExtras
 
+extension EventLoopFuture where Value: Model {
+    func delete(on db: Database) -> EventLoopFuture<Void> {
+        return self.map { model in
+            return model.delete(on: db)
+        }
+    }
+}
+
 public protocol CrudChildrenControllerProtocol {
     associatedtype ParentType: Model & Content where ParentType.IDValue: LosslessStringConvertible
     associatedtype ChildType: Model & Content where ChildType.IDValue: LosslessStringConvertible
@@ -19,23 +27,16 @@ public protocol CrudChildrenControllerProtocol {
 public extension CrudChildrenControllerProtocol {
     func index(_ req: Request) throws -> EventLoopFuture<ChildType> {
         let parentId: ParentType.IDValue = try req.getId()
-        let childId: ChildType.IDValue = try req.getId()
         
-        let thing = ParentType
-            .query(on: req.db)
-            .join(ChildType.self, on: children == \ParentType.$id)
-        
-        return
-        
-//            .find(parentId, on: db)
-//            .unwrap(or: Abort(.notFound))
-//            .flatMap { parent -> EventLoopFuture<ChildType> in
-//                return try! parent[keyPath: self.children]
-//                    .query(on: self.db)
-//                    .filter(\ChildType.id == childId)
-//                    .first()
-//                    .unwrap(or: Abort(.notFound))
-//        }
+        return try ParentType
+            .find(parentId, on: req.db)
+            .unwrap(or: Abort(.notFound))
+            .throwingFlatMap { parent -> EventLoopFuture<ChildType> in
+                return try parent[keyPath: self.children]
+                    .query(on: req.db)
+                    .first()
+                    .unwrap(or: Abort(.notFound))
+            }
     }
 
     func indexAll(_ req: Request) throws -> EventLoopFuture<[ChildType]> {
@@ -58,13 +59,12 @@ public extension CrudChildrenControllerProtocol {
             .unwrap(or: Abort(.notFound))
             .throwingFlatMap { parent -> EventLoopFuture<ChildType> in
                 let child = try req.content.decode(ChildType.self)
-                return try parent[keyPath: self.children].query(on: req.db)
+                return child.save(on: req.db).transform(to: child)
         }
     }
 
     func update(_ req: Request) throws -> EventLoopFuture<ChildType> {
         let parentId: ParentType.IDValue = try req.getId()
-        let childId: ChildType.IDValue = try req.getId()
 
         return try ParentType
             .find(parentId, on: req.db)
@@ -72,21 +72,18 @@ public extension CrudChildrenControllerProtocol {
             .throwingFlatMap { parent -> EventLoopFuture<ChildType> in
                 return try parent[keyPath: self.children]
                     .query(on: req.db)
-                    .filter(\ChildType.fluentID == childId)
                     .first()
                     .unwrap(or: Abort(.notFound))
             }.throwingFlatMap { oldChild in
-                return try req.content.decode(ChildType.self).flatMap { newChild in
-                    var temp = newChild
-                    temp.fluentID = oldChild.fluentID
-                    return temp.update(on: req.db)
-                }
+                let newChild = try req.content.decode(ChildType.self)
+                let temp = newChild
+                temp.id = oldChild.id
+                return temp.update(on: req.db).transform(to: temp)
         }
     }
 
     func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
         let parentId: ParentType.IDValue = try req.getId()
-        let childId: ChildType.IDValue = try req.getId()
 
         return try ParentType
             .find(parentId, on: req.db)
@@ -94,7 +91,6 @@ public extension CrudChildrenControllerProtocol {
             .throwingFlatMap { parent -> EventLoopFuture<HTTPStatus> in
                 return try parent[keyPath: self.children]
                     .query(on: req.db)
-                    .filter(\ChildType.fluentID == childId)
                     .first()
                     .unwrap(or: Abort(.notFound))
                     .delete(on: req.db)

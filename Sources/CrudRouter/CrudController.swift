@@ -10,12 +10,15 @@ public struct CrudController<ModelT: Model & Content>: CrudControllerProtocol, C
     public typealias ChildType = ModelT
     public typealias ModelType = ModelT
 
-    public let db: Database
     public let path: [PathComponent]
     public let router: RoutesBuilder
     let activeMethods: Set<RouterMethod>
 
-    init(path: [PathComponent], router: RoutesBuilder, activeMethods: Set<RouterMethod>) {
+    init(
+        path: [PathComponent],
+        router: RoutesBuilder,
+        activeMethods: Set<RouterMethod>
+    ) {
         let adjustedPath = path.adjustedPath(for: ModelType.self)
 
         self.path = adjustedPath

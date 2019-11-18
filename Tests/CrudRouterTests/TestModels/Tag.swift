@@ -1,17 +1,35 @@
-import FluentSQLite
+import FluentSQLiteDriver
 import Vapor
 
-struct Tag: SQLiteModel {
-    var id: Int?
-    var name: String
-}
+public final class Tag: Model, Content {
+    public static let schema = "tags"
 
-extension Tag {
-    // all planets that have this tag
-    var planets: Siblings<Tag, Planet, PlanetTag> {
-        return siblings()
+    @ID(key: "id")
+    public var id: Int?
+
+    @Field(key: "name")
+    public var name: String
+
+    @Siblings(through: PlanetTag.self, from: \.$tag, to: \.$planet)
+    public var planets: [Planet]
+
+    public init() { }
+
+    public init(id: Int? = nil, name: String) {
+        self.id = id
+        self.name = name
     }
 }
 
-extension Tag: Content { }
-extension Tag: Migration { }
+public struct TagMigration: Migration {
+    public func prepare(on database: Database) -> EventLoopFuture<Void> {
+        return database.schema("tags")
+            .field("id", .int, .identifier(auto: true))
+            .field("name", .string, .required)
+            .create()
+    }
+
+    public func revert(on database: Database) -> EventLoopFuture<Void> {
+        return database.schema("tags").delete()
+    }
+}

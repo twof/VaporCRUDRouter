@@ -1,22 +1,35 @@
-import FluentSQLite
+import FluentSQLiteDriver
 
-struct PlanetTag: SQLitePivot {
-    typealias Left = Planet
-    typealias Right = Tag
-
-    static var leftIDKey: LeftIDKey = \.planetID
-    static var rightIDKey: RightIDKey = \.tagID
-
+final class PlanetTag: Model {
+    static let schema = "planet+tag"
+    
+    @ID(key: "id")
     var id: Int?
-    var planetID: Int
-    var tagID: Int
-}
 
-extension PlanetTag: ModifiablePivot {
-    init(_ planet: Planet, _ tag: Tag) throws {
-        planetID = try planet.requireID()
-        tagID = try tag.requireID()
+    @Parent(key: "planet_id")
+    var planet: Planet
+
+    @Parent(key: "tag_id")
+    var tag: Tag
+
+    init() { }
+
+    init(planetID: Int, tagID: Int) {
+        self.$planet.id = planetID
+        self.$tag.id = tagID
     }
 }
 
-extension PlanetTag: Migration { }
+struct PlanetTagMigration: Migration {
+    func prepare(on database: Database) -> EventLoopFuture<Void> {
+        return database.schema("planet+tag")
+            .field("id", .int, .identifier(auto: true))
+            .field("planet_id", .int, .required)
+            .field("tag_id", .int, .required)
+            .create()
+    }
+
+    func revert(on database: Database) -> EventLoopFuture<Void> {
+        return database.schema("planet+tag").delete()
+    }
+}
