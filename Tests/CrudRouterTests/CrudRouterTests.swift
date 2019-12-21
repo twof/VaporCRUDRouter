@@ -60,31 +60,18 @@ struct TestSeeding: Migration {
 }
 
 func configure(_ app: Application) throws {
-    app.provider(FluentProvider())
+    // Serves files from `Public/` directory
+    // app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
 
-    // Register middleware
-    app.register(extension: MiddlewareConfiguration.self) { middlewares, app in
-        // Serves files from `Public/` directory
-        // middlewares.use(app.make(FileMiddleware.self))
-    }
-    
-    app.databases.sqlite(
-        configuration: .init(storage: .connection(.file(path: "db.sqlite"))),
-        threadPool: app.make(),
-        poolConfiguration: app.make(),
-        logger: app.make(),
-        on: app.make()
-    )
-    
-    app.register(Migrations.self) { c in
-        var migrations = Migrations()
-        migrations.add(GalaxyMigration(), to: .sqlite)
-        migrations.add(PlanetMigration(), to: .sqlite)
-        migrations.add(PlanetTagMigration(), to: .sqlite)
-        migrations.add(TagMigration(), to: .sqlite)
-        migrations.add(TestSeeding(), to: .sqlite)
-        return migrations
-    }
+    // Configure SQLite database
+    app.databases.use(.sqlite(file: "db.sqlite"), as: .sqlite)
+
+    // Configure migrations
+    app.migrations.add(GalaxyMigration())
+    app.migrations.add(PlanetMigration())
+    app.migrations.add(PlanetTagMigration())
+    app.migrations.add(TagMigration())
+    app.migrations.add(TestSeeding())
 }
 
 func routes(_ router: RoutesBuilder) throws {
@@ -112,9 +99,8 @@ extension Application {
     }
 
     func sendRequest<T>(to path: String, method: HTTPMethod, headers: HTTPHeaders = .init(), body: T? = nil) throws -> Response where T: Content {
-        let responder = self.make(Responder.self)
-        let request = Request(application: self, method: method, url: URI(path: path), on: self.make())
-        return try responder.respond(to: request).wait()
+        let request = Request(application: self, method: method, url: URI(path: path), on: self.eventLoopGroup.next())
+        return try self.responder.respond(to: request).wait()
     }
 
     func sendRequest(to path: String, method: HTTPMethod, headers: HTTPHeaders = .init()) throws -> Response {

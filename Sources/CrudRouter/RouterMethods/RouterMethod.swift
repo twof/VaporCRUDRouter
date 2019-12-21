@@ -15,9 +15,9 @@ public enum RouterMethod {
     ) {
         switch self {
         case .read:
-            router.get(idPath, use: controller.index)
+            router.on(.GET, idPath, use: controller.index)
         case .readAll:
-            router.get(path, use: controller.indexAll)
+            router.on(.GET, path, use: controller.indexAll)
         case .create:
             router.post(path, use: controller.create)
         case .update:
