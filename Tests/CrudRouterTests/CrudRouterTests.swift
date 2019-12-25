@@ -95,6 +95,11 @@ extension Application {
         try configure(app)
 
         try boot(app)()
+
+        // Prepare migrator and run migrations
+        try app.migrator.setupIfNeeded().wait()
+        try app.migrator.prepareBatch().wait()
+
         return app
     }
 
@@ -166,12 +171,13 @@ final class CrudRouterTests: XCTestCase {
 
     func testPublicable() throws {
         do {
-            //            let resp = try app.getResponse(to: "/galaxy", method: .GET, decodeTo: [Galaxy.PublicGalaxy].self)
+            app.crud(register: Galaxy.self)
+            
             let resp = try app.sendRequest(to: "/galaxy", method: .GET)
             let decoded = try resp.content.decode([Galaxy].self)
             XCTAssert(decoded.count == 1)
-            //            XCTAssert(resp.count == 1)
-            //            XCTAssert(resp[0].nameAndId == "Milky Way 0")
+            XCTAssert(decoded[0].name == "Milky Way")
+            XCTAssert(decoded[0].id == 1)
         } catch {
             XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")
         }
