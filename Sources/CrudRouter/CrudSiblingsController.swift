@@ -76,8 +76,8 @@ public extension CrudSiblingsController {
         let parentPath = self.path
         let parentIdPath = self.path.appending(.parameter("\(ParentType.schema)ID"))
         
-        router.get(parentIdPath, use: self.index)
-        router.get(parentPath, use: self.indexAll)
+        router.on(.GET, parentIdPath, use: self.index)
+        router.on(.GET, parentPath, use: self.indexAll)
         router.put(parentIdPath, use: self.update)
     }
 }

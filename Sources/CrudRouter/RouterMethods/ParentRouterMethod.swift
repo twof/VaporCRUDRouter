@@ -11,7 +11,7 @@ public enum ParentRouterMethod {
     ) {
         switch self {
         case .read:
-            router.get(path, use: controller.index)
+            router.on(.GET, path, use: controller.index)
         case .update:
             router.put(path, use: controller.update)
         }

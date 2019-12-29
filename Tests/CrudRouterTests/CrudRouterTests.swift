@@ -62,36 +62,19 @@ struct TestSeeding: Migration {
     static let galaxies = [Galaxy(name: "Milky Way")]
 }
 
-func configure(_ app: inout Application) throws {
-    app.provider(FluentProvider())
+func configure(_ app: Application) throws {
+    // Serves files from `Public/` directory
+    // app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
 
-    // Register middleware
-    app.register(extension: MiddlewareConfiguration.self) { middlewares, app in
-        // Serves files from `Public/` directory
-        // middlewares.use(app.make(FileMiddleware.self))
-    }
-    
-    app.databases.sqlite(
-        configuration: .init(storage: .connection(.memory)),
-        threadPool: app.make(),
-        poolConfiguration: app.make(),
-        logger: app.make(),
-        on: app.make()
-    )
-    
-    app.register(Migrations.self) { c in
-        var migrations = Migrations()
-        migrations.add(GalaxyMigration(), to: .sqlite)
-        migrations.add(TestSeeding(), to: .sqlite)
-        migrations.add(PlanetMigration(), to: .sqlite)
-        migrations.add(PlanetTagMigration(), to: .sqlite)
-        migrations.add(TagMigration(), to: .sqlite)
-        return migrations
-    }
-    
-    let migrator = app.make(Migrator.self)
-    try migrator.setupIfNeeded().wait()
-    try migrator.prepareBatch().wait()
+    // Configure SQLite database
+    app.databases.use(.sqlite(file: "db.sqlite"), as: .sqlite)
+
+    // Configure migrations
+    app.migrations.add(GalaxyMigration())
+    app.migrations.add(PlanetMigration())
+    app.migrations.add(PlanetTagMigration())
+    app.migrations.add(TagMigration())
+    app.migrations.add(TestSeeding())
 }
 
 func routes(_ router: RoutesBuilder) throws {
@@ -108,18 +91,22 @@ func routes(_ router: RoutesBuilder) throws {
 }
 
 extension Application {
-//    static func testable(envArgs: [String]? = nil) throws -> Application {
-//        let environment = Environment(name: "testing")
-//        var app = Application(environment: environment)
-//        try configure(&app)
-//
-//        return app
-//    }
+    static func testable(envArgs: [String]? = nil) throws -> Application {
+        let app = Application()
+        try configure(app)
+
+        try boot(app)()
+
+        // Prepare migrator and run migrations
+        try app.migrator.setupIfNeeded().wait()
+        try app.migrator.prepareBatch().wait()
+
+        return app
+    }
 
     func sendRequest<T>(to path: String, method: HTTPMethod, headers: HTTPHeaders = .init(), body: T? = nil) throws -> Response where T: Content {
-        let responder = self.make(Responder.self)
-        let request = Request(application: self, method: method, url: URI(path: path), on: self.make())
-        return try responder.respond(to: request).wait()
+        let request = Request(application: self, method: method, url: URI(path: path), on: self.eventLoopGroup.next())
+        return try self.responder.respond(to: request).wait()
     }
 
     func sendRequest(to path: String, method: HTTPMethod, headers: HTTPHeaders = .init()) throws -> Response {
@@ -182,8 +169,8 @@ final class CrudRouterTests: XCTestCase {
             let resp = try app.sendRequest(to: "/galaxy", method: .GET)
             let decoded = try resp.content.decode([Galaxy].self)
             XCTAssert(decoded.count == 1)
-            //            XCTAssert(resp.count == 1)
-            //            XCTAssert(resp[0].nameAndId == "Milky Way 0")
+            XCTAssert(decoded[0].name == "Milky Way")
+            XCTAssert(decoded[0].id == 1)
         } catch {
             XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")
         }
