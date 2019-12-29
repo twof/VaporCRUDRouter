@@ -3,6 +3,7 @@ import XCTest
 import Vapor
 import FluentSQLiteDriver
 import Fluent
+import XCTVapor
 
 extension PathComponent {
     var stringComponent: String {
@@ -47,7 +48,9 @@ extension PathComponent {
 
 struct TestSeeding: Migration {
     func prepare(on database: Database) -> EventLoopFuture<Void> {
-        return TestSeeding.galaxies.create(on: database).transform(to: ())
+        return TestSeeding.galaxies.map {
+            $0.save(on: database).transform(to: ())
+        }.flatten(on: database.eventLoop)
     }
     
     func revert(on database: Database) -> EventLoopFuture<Void> {
@@ -59,7 +62,7 @@ struct TestSeeding: Migration {
     static let galaxies = [Galaxy(name: "Milky Way")]
 }
 
-func configure(_ app: Application) throws {
+func configure(_ app: inout Application) throws {
     app.provider(FluentProvider())
 
     // Register middleware
@@ -69,7 +72,7 @@ func configure(_ app: Application) throws {
     }
     
     app.databases.sqlite(
-        configuration: .init(storage: .connection(.file(path: "db.sqlite"))),
+        configuration: .init(storage: .connection(.memory)),
         threadPool: app.make(),
         poolConfiguration: app.make(),
         logger: app.make(),
@@ -79,12 +82,16 @@ func configure(_ app: Application) throws {
     app.register(Migrations.self) { c in
         var migrations = Migrations()
         migrations.add(GalaxyMigration(), to: .sqlite)
+        migrations.add(TestSeeding(), to: .sqlite)
         migrations.add(PlanetMigration(), to: .sqlite)
         migrations.add(PlanetTagMigration(), to: .sqlite)
         migrations.add(TagMigration(), to: .sqlite)
-        migrations.add(TestSeeding(), to: .sqlite)
         return migrations
     }
+    
+    let migrator = app.make(Migrator.self)
+    try migrator.setupIfNeeded().wait()
+    try migrator.prepareBatch().wait()
 }
 
 func routes(_ router: RoutesBuilder) throws {
@@ -100,16 +107,14 @@ func routes(_ router: RoutesBuilder) throws {
     }
 }
 
-func boot(_ app: Application) throws { }
-
 extension Application {
-    static func testable(envArgs: [String]? = nil) throws -> Application {
-        let app = Application()
-        try configure(app)
-
-        try boot(app)()
-        return app
-    }
+//    static func testable(envArgs: [String]? = nil) throws -> Application {
+//        let environment = Environment(name: "testing")
+//        var app = Application(environment: environment)
+//        try configure(&app)
+//
+//        return app
+//    }
 
     func sendRequest<T>(to path: String, method: HTTPMethod, headers: HTTPHeaders = .init(), body: T? = nil) throws -> Response where T: Content {
         let responder = self.make(Responder.self)
@@ -141,15 +146,9 @@ struct EmptyContent: Content {}
 
 final class CrudRouterTests: XCTestCase {
 
-    var app: Application!
-
-    override func setUp() {
-        //        try! Application.reset()
-        app = try! Application.testable()
-    }
-
     func testBaseCrudRegistrationWithRouteName() throws {
-
+        Application.
+        
         app.crud("planets", register: Planet.self)
 
         XCTAssert(app.routes.all.isEmpty == false)
@@ -164,7 +163,6 @@ final class CrudRouterTests: XCTestCase {
     }
 
     func testBaseCrudRegistrationWithDefaultRoute() throws {
-
         app.crud(register: Planet.self)
 
         XCTAssert(app.routes.all.isEmpty == false)
@@ -179,8 +177,8 @@ final class CrudRouterTests: XCTestCase {
     }
 
     func testPublicable() throws {
+        app.crud(register: Galaxy.self)
         do {
-            //            let resp = try app.getResponse(to: "/galaxy", method: .GET, decodeTo: [Galaxy.PublicGalaxy].self)
             let resp = try app.sendRequest(to: "/galaxy", method: .GET)
             let decoded = try resp.content.decode([Galaxy].self)
             XCTAssert(decoded.count == 1)

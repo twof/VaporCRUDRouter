@@ -4,8 +4,6 @@ import Fluent
 public protocol CrudParentControllerProtocol {
     associatedtype ParentType: Model & Content where ParentType.IDValue: LosslessStringConvertible
     associatedtype ChildType: Model & Content where ChildType.IDValue: LosslessStringConvertible
-    
-//    var db: Database { get }
 
     var relation: KeyPath<ChildType, Parent<ParentType>> { get }
 

@@ -16,6 +16,6 @@ let package = Package(
     ],
     targets: [
         .target(name: "CrudRouter", dependencies: ["Fluent", "FluentSQLiteDriver", "Vapor"]),
-        .testTarget(name: "CrudRouterTests", dependencies: ["CrudRouter", "FluentSQLiteDriver"]),
+        .testTarget(name: "CrudRouterTests", dependencies: ["CrudRouter", "FluentSQLiteDriver", "XCTVapor"]),
     ]
 )
