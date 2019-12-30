@@ -26,7 +26,7 @@ public protocol CrudChildrenControllerProtocol {
 
 public extension CrudChildrenControllerProtocol {
     func index(_ req: Request) throws -> EventLoopFuture<ChildType> {
-        let parentId: ParentType.IDValue = try req.getId()
+        let parentId = try req.getId(modelType: ParentType.self)
         
         return try ParentType
             .find(parentId, on: req.db)
@@ -40,7 +40,7 @@ public extension CrudChildrenControllerProtocol {
     }
 
     func indexAll(_ req: Request) throws -> EventLoopFuture<[ChildType]> {
-        let parentId: ParentType.IDValue = try req.getId()
+        let parentId = try req.getId(modelType: ParentType.self)
         return try ParentType
             .find(parentId, on: req.db)
             .unwrap(or: Abort(.notFound))
@@ -52,7 +52,7 @@ public extension CrudChildrenControllerProtocol {
     }
 
     func create(_ req: Request) throws -> EventLoopFuture<ChildType> {
-        let parentId: ParentType.IDValue = try req.getId()
+        let parentId = try req.getId(modelType: ParentType.self)
 
         return try ParentType
             .find(parentId, on: req.db)
@@ -64,7 +64,7 @@ public extension CrudChildrenControllerProtocol {
     }
 
     func update(_ req: Request) throws -> EventLoopFuture<ChildType> {
-        let parentId: ParentType.IDValue = try req.getId()
+        let parentId = try req.getId(modelType: ParentType.self)
 
         return try ParentType
             .find(parentId, on: req.db)
@@ -83,7 +83,7 @@ public extension CrudChildrenControllerProtocol {
     }
 
     func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        let parentId: ParentType.IDValue = try req.getId()
+        let parentId = try req.getId(modelType: ParentType.self)
 
         return try ParentType
             .find(parentId, on: req.db)

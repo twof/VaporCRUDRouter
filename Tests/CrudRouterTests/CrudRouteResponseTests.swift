@@ -9,35 +9,21 @@ import FluentSQLiteDriver
 import Fluent
 import XCTVapor
 
-struct TestSeeding: Migration {
-    func prepare(on database: Database) -> EventLoopFuture<Void> {
-        return TestSeeding.galaxies.map {
-            $0.save(on: database).transform(to: ())
-        }.flatten(on: database.eventLoop)
-    }
-    
-    func revert(on database: Database) -> EventLoopFuture<Void> {
-        return TestSeeding.galaxies.map {
-            $0.delete(on: database).transform(to: ())
-        }.flatten(on: database.eventLoop)
-    }
-    
-    static let galaxies = [Galaxy(name: "Milky Way")]
-}
-
 func configure(_ app: Application) throws {
     // Serves files from `Public/` directory
     // app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
 
     // Configure SQLite database
-    app.databases.use(.sqlite(file: "db.sqlite"), as: .sqlite)
+    app.databases.use(.sqlite(), as: .sqlite)
 
     // Configure migrations
     app.migrations.add(GalaxyMigration())
     app.migrations.add(PlanetMigration())
     app.migrations.add(PlanetTagMigration())
     app.migrations.add(TagMigration())
-    app.migrations.add(TestSeeding())
+   
+    app.migrations.add(BaseGalaxySeeding())
+    app.migrations.add(ChildSeeding())
 }
 
 final class CrudRouteResponseTests: XCTestCase {
@@ -48,10 +34,40 @@ final class CrudRouteResponseTests: XCTestCase {
         
         app = Application()
         try! configure(app)
+        
+        try! app.migrator.setupIfNeeded().wait()
+        try! app.migrator.prepareBatch().wait()
+    }
+    
+    override func tearDown() {
+        super.tearDown()
+        
+        try! app.migrator.revertAllBatches().wait()
     }
     
     func testBase() throws {
         app.crud(register: Galaxy.self)
+        
+        do {
+            try app.testable().test(.GET, "/galaxy", closure: { (resp) in
+                XCTAssert(resp.status == .ok)
+                guard let bodyBuffer = resp.body.buffer else { XCTFail(); return }
+                
+                let decoded = try JSONDecoder().decode([Galaxy].self, from: bodyBuffer)
+                print(decoded)
+                XCTAssert(decoded.count == 1)
+                XCTAssert(decoded[0].name == "Milky Way")
+                XCTAssert(decoded[0].id == 1)
+            })
+        } catch {
+            XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")
+        }
+    }
+    
+    func testChildren() throws {
+        app.crud(register: Galaxy.self) { (controller) in
+            controller.crud(children: \.$planets)
+        }
         
         do {
             try app.testable().test(.GET, "/galaxy", closure: { (resp) in
@@ -64,12 +80,31 @@ final class CrudRouteResponseTests: XCTestCase {
                 XCTAssert(decoded[0].name == "Milky Way")
                 XCTAssert(decoded[0].id == 1)
             })
+            
+            try app.testable().test(.GET, "/galaxy/1/planet", closure: { (resp) in
+                XCTAssert(resp.status == .ok)
+                guard let bodyBuffer = resp.body.buffer else { XCTFail(); return }
+                
+                let decoded = try JSONDecoder().decode([Planet].self, from: bodyBuffer)
+                
+                XCTAssert(decoded.count == 1)
+                XCTAssert(decoded[0].name == "Earth")
+                XCTAssert(decoded[0].id == 1)
+            })
         } catch {
             XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")
         }
     }
+    
+    func testParents() throws {
+        
+    }
+    
+    func testSiblings() throws {
+        
+    }
 
     static var allTests = [
-        ("testPublicable", testPublicable),
+        ("testPublicable", testBase),
     ]
 }

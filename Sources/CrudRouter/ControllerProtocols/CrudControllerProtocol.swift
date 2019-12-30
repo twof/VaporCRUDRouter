@@ -17,7 +17,7 @@ public extension CrudControllerProtocol {
     }
 
     func index(_ req: Request) throws -> EventLoopFuture<ModelType> {
-        let id: ModelType.IDValue = try req.getId()
+        let id = try req.getId(modelType: ModelType.self)
         return ModelType.find(id, on: req.db).unwrap(or: Abort(.notFound))
     }
 
@@ -27,7 +27,7 @@ public extension CrudControllerProtocol {
     }
 
     func update(_ req: Request) throws -> EventLoopFuture<ModelType> {
-        let id: ModelType.IDValue = try req.getId()
+        let id = try req.getId(modelType: ModelType.self)
         let model = try req.content.decode(ModelType.self)
        
         let temp = model
@@ -36,7 +36,7 @@ public extension CrudControllerProtocol {
     }
 
     func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        let id: ModelType.IDValue = try req.getId()
+        let id = try req.getId(modelType: ModelType.self)
         return ModelType
             .find(id, on: req.db)
             .unwrap(or: Abort(.notFound))

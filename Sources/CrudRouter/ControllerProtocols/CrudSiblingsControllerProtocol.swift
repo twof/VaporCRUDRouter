@@ -28,7 +28,7 @@ public protocol CrudSiblingsControllerProtocol {
 
 public extension CrudSiblingsControllerProtocol {
     func index(_ req: Request) throws -> EventLoopFuture<ChildType> {
-        let parentId: ParentType.IDValue = try req.getId()
+        let parentId = try req.getId(modelType: ParentType.self)
 
         return try ParentType.find(parentId, on: req.db).unwrap(or: Abort(.notFound)).throwingFlatMap { parent -> EventLoopFuture<ChildType> in
 
@@ -40,7 +40,7 @@ public extension CrudSiblingsControllerProtocol {
     }
 
     func indexAll(_ req: Request) throws -> EventLoopFuture<[ChildType]> {
-        let parentId: ParentType.IDValue = try req.getId()
+        let parentId = try req.getId(modelType: ParentType.self)
 
         return try ParentType.find(parentId, on: req.db).unwrap(or: Abort(.notFound)).throwingFlatMap { parent -> EventLoopFuture<[ChildType]> in
             let siblingsRelation = parent[keyPath: self.siblings]
@@ -51,7 +51,7 @@ public extension CrudSiblingsControllerProtocol {
     }
 
     func update(_ req: Request) throws -> EventLoopFuture<ChildType> {
-        let parentId: ParentType.IDValue = try req.getId()
+        let parentId = try req.getId(modelType: ParentType.self)
 
         return try ParentType
             .find(parentId, on: req.db)
@@ -77,7 +77,7 @@ public extension CrudSiblingsControllerProtocol
 //    ThroughType.Right == ChildType
 {
     func create(_ req: Request) throws -> EventLoopFuture<ChildType> {
-        let parentId: ParentType.IDValue = try req.getId()
+        let parentId = try req.getId(modelType: ParentType.self)
 
         return try ParentType.find(parentId, on: req.db).unwrap(or: Abort(.notFound)).throwingFlatMap { parent -> EventLoopFuture<ChildType> in
             let child = try req.content.decode(ChildType.self)
@@ -88,7 +88,7 @@ public extension CrudSiblingsControllerProtocol
     }
 
     func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        let parentId: ParentType.IDValue = try req.getId()
+        let parentId = try req.getId(modelType: ParentType.self)
 
         return try ParentType
             .find(parentId, on: req.db)

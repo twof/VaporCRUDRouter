@@ -13,7 +13,7 @@ public protocol CrudParentControllerProtocol {
 
 public extension CrudParentControllerProtocol {
     func index(_ req: Request) throws -> EventLoopFuture<ParentType> {
-        let childId: ChildType.IDValue = try req.getId()
+        let childId = try req.getId(modelType: ChildType.self)
 
         return ChildType.find(childId, on: req.db).unwrap(or: Abort(.notFound)).flatMap { child in
             child[keyPath: self.relation].get(on: req.db)
@@ -21,7 +21,7 @@ public extension CrudParentControllerProtocol {
     }
 
     func update(_ req: Request) throws -> EventLoopFuture<ParentType> {
-        let childId: ChildType.IDValue = try req.getId()
+        let childId = try req.getId(modelType: ChildType.self)
 
         return ChildType
             .find(childId, on: req.db)

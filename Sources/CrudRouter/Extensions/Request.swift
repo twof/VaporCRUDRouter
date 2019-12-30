@@ -2,8 +2,8 @@ import Vapor
 import Fluent
 
 extension Request {
-    func getId<T>() throws -> T where T: LosslessStringConvertible {
-        guard let id: T = self.parameters.get("id") else { fatalError() }
+    func getId<M: Model>(modelType: M.Type) throws -> M.IDValue where M.IDValue: LosslessStringConvertible {
+        guard let id: M.IDValue = self.parameters.get("\(modelType.schema)ID") else { fatalError() }
 
         return id
     }
