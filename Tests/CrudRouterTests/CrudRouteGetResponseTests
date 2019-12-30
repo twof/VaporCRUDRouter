@@ -27,7 +27,7 @@ func configure(_ app: Application) throws {
     app.migrations.add(SiblingSeeding())
 }
 
-final class CrudRouteResponseTests: XCTestCase {
+final class CrudRouteGetResponseTests: XCTestCase {
     var app: Application!
     
     override func setUp() {
