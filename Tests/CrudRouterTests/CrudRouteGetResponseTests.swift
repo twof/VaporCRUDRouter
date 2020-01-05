@@ -37,7 +37,7 @@ final class CrudRouteGetResponseTests: XCTestCase {
                 guard let bodyBuffer = resp.body.buffer else { XCTFail(); return }
                 
                 let decoded = try JSONDecoder().decode([Galaxy].self, from: bodyBuffer)
-                print(decoded)
+                
                 XCTAssert(decoded.count == 1)
                 XCTAssert(decoded[0].name == "Milky Way")
                 XCTAssert(decoded[0].id == 1)
