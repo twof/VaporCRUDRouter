@@ -9,24 +9,6 @@ import FluentSQLiteDriver
 import Fluent
 import XCTVapor
 
-func configure(_ app: Application) throws {
-    // Serves files from `Public/` directory
-    // app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
-
-    // Configure SQLite database
-    app.databases.use(.sqlite(), as: .sqlite)
-
-    // Configure migrations
-    app.migrations.add(GalaxyMigration())
-    app.migrations.add(PlanetMigration())
-    app.migrations.add(PlanetTagMigration())
-    app.migrations.add(TagMigration())
-   
-    app.migrations.add(BaseGalaxySeeding())
-    app.migrations.add(ChildSeeding())
-    app.migrations.add(SiblingSeeding())
-}
-
 final class CrudRouteGetResponseTests: XCTestCase {
     var app: Application!
     
@@ -184,6 +166,24 @@ final class CrudRouteGetResponseTests: XCTestCase {
         } catch {
             XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")
         }
+    }
+    
+    private func configure(_ app: Application) throws {
+        // Serves files from `Public/` directory
+        // app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
+
+        // Configure SQLite database
+        app.databases.use(.sqlite(), as: .sqlite)
+
+        // Configure migrations
+        app.migrations.add(GalaxyMigration())
+        app.migrations.add(PlanetMigration())
+        app.migrations.add(PlanetTagMigration())
+        app.migrations.add(TagMigration())
+       
+        app.migrations.add(BaseGalaxySeeding())
+        app.migrations.add(ChildSeeding())
+        app.migrations.add(SiblingSeeding())
     }
 
     static var allTests = [
