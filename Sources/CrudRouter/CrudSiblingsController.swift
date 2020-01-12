@@ -52,32 +52,33 @@ extension CrudSiblingsController: RouteCollection {}
 //    }
 //}
 //
-//public extension CrudSiblingsController where
+public extension CrudSiblingsController
+//    where
 //    ThroughType.Left == ParentType,
 //    ThroughType.Right == ChildType
-//{
+{
+    func boot(routes router: RoutesBuilder) throws {
+        let parentPath = self.path
+        let parentIdPath = self.path.appending(.parameter("\(ParentType.schema)ID"))
+
+        self.activeMethods.forEach {
+            $0.register(
+                router: router,
+                controller: self,
+                path: parentPath,
+                idPath: parentIdPath
+            )
+        }
+    }
+}
+
+//public extension CrudSiblingsController {
 //    func boot(routes router: RoutesBuilder) throws {
 //        let parentPath = self.path
 //        let parentIdPath = self.path.appending(.parameter("\(ParentType.schema)ID"))
 //
-//        self.activeMethods.forEach {
-//            $0.register(
-//                router: router,
-//                controller: self,
-//                path: parentPath,
-//                idPath: parentIdPath
-//            )
-//        }
+//        router.on(.GET, parentIdPath, use: self.index)
+//        router.on(.GET, parentPath, use: self.indexAll)
+//        router.put(parentIdPath, use: self.update)
 //    }
 //}
-
-public extension CrudSiblingsController {
-    func boot(routes router: RoutesBuilder) throws {
-        let parentPath = self.path
-        let parentIdPath = self.path.appending(.parameter("\(ParentType.schema)ID"))
-        
-        router.on(.GET, parentIdPath, use: self.index)
-        router.on(.GET, parentPath, use: self.indexAll)
-        router.put(parentIdPath, use: self.update)
-    }
-}

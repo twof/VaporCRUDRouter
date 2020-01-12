@@ -88,7 +88,7 @@ final class CrudRoutePostResponseTests: XCTestCase {
             let newPlanet = Planet(name: "Mars", galaxyID: 2)
             
             try app.testable().test(.POST, "/galaxy/1/planet", json: newPlanet, closure: { (resp) in
-                XCTAssert(resp.status == .ok)
+                XCTAssertEqual(resp.status, .ok)
                 guard let bodyBuffer = resp.body.buffer else { XCTFail(); return }
                 
                 let decoded = try JSONDecoder().decode(Planet.self, from: bodyBuffer)
@@ -118,25 +118,33 @@ final class CrudRoutePostResponseTests: XCTestCase {
         }
         
         do {
-            try app.testable().test(.POST, "/planet", closure: { (resp) in
-                XCTAssert(resp.status == .ok)
+            let newPlanet = Planet(name: "Mars", galaxyID: 2)
+            
+            try app.testable().test(.POST, "/planet", json: newPlanet, closure: { (resp) in
+                XCTAssertEqual(resp.status, .ok)
                 guard let bodyBuffer = resp.body.buffer else { XCTFail(); return }
-                
-                let decoded = try JSONDecoder().decode([Planet].self, from: bodyBuffer)
-                
-                XCTAssert(decoded.count == 1)
-                XCTAssert(decoded[0].name == "Earth")
-                XCTAssert(decoded[0].id == 1)
+               
+                let decoded = try JSONDecoder().decode(Planet.self, from: bodyBuffer)
+               
+                XCTAssertEqual(decoded.name, "Mars")
+                XCTAssertEqual(decoded.id, 2)
+                XCTAssertEqual(decoded.$galaxy.id, 2)
+
+               
+                let newPlanets = try app.db.query(Planet.self).all().wait()
+               
+                XCTAssertEqual(newPlanets.count, 2)
+                XCTAssert(newPlanets.contains { $0.name == "Mars" })
+               
+                let newMars = newPlanets.first { $0.name == "Mars" }
+               
+                XCTAssertEqual(newMars?.id, 2)
             })
             
-            try app.testable().test(.POST, "/planet/1/galaxy", closure: { (resp) in
-                XCTAssert(resp.status == .ok)
-                guard let bodyBuffer = resp.body.buffer else { XCTFail(); return }
-                
-                let decoded = try JSONDecoder().decode(Galaxy.self, from: bodyBuffer)
-                
-                XCTAssert(decoded.name == "Milky Way")
-                XCTAssert(decoded.id == 1)
+            let newGalaxy = Galaxy(name: "Andromeda")
+            
+            try app.testable().test(.POST, "/planet/1/galaxy", json: newGalaxy, closure: { (resp) in
+                XCTAssertEqual(resp.status, .notFound)
             })
         } catch {
             XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")
@@ -153,48 +161,80 @@ final class CrudRoutePostResponseTests: XCTestCase {
         }
         
         do {
-            try app.testable().test(.POST, "/planet", closure: { (resp) in
-                XCTAssert(resp.status == .ok)
+            let newPlanet = Planet(name: "Mars", galaxyID: 2)
+            
+            try app.testable().test(.POST, "/planet", json: newPlanet, closure: { (resp) in
+                XCTAssertEqual(resp.status, .ok)
                 guard let bodyBuffer = resp.body.buffer else { XCTFail(); return }
                 
-                let decoded = try JSONDecoder().decode([Planet].self, from: bodyBuffer)
+                let decoded = try JSONDecoder().decode(Planet.self, from: bodyBuffer)
                 
-                XCTAssert(decoded.count == 1)
-                XCTAssert(decoded[0].name == "Earth")
-                XCTAssert(decoded[0].id == 1)
+                XCTAssertEqual(decoded.name, "Mars")
+                XCTAssertEqual(decoded.id, 2)
+                XCTAssertEqual(decoded.$galaxy.id, 2)
+
+                let newPlanets = try app.db.query(Planet.self).all().wait()
+                
+                XCTAssertEqual(newPlanets.count, 2)
+                XCTAssert(newPlanets.contains { $0.name == "Mars" })
+                
+                let newMars = newPlanets.first { $0.name == "Mars" }
+                
+                XCTAssertEqual(newMars?.id, 2)
             })
             
-            try app.testable().test(.POST, "/tag", closure: { (resp) in
-                XCTAssert(resp.status == .ok)
+            let newTag = Tag(id: 2, name: "Red")
+            
+            try app.testable().test(.POST, "/tag", json: newTag, closure: { (resp) in
+                XCTAssertEqual(resp.status, .ok)
                 guard let bodyBuffer = resp.body.buffer else { XCTFail(); return }
                 
-                let decoded = try JSONDecoder().decode([Tag].self, from: bodyBuffer)
+                let decoded = try JSONDecoder().decode(Tag.self, from: bodyBuffer)
                 
-                XCTAssert(decoded.count == 1)
-                XCTAssert(decoded[0].name == "Life-Supporting")
-                XCTAssert(decoded[0].id == 1)
+                XCTAssertEqual(decoded.name, "Red")
+                XCTAssertEqual(decoded.id, 2)
+                
+                let newTags = try app.db.query(Tag.self).all().wait()
+                
+                XCTAssertEqual(newTags.count, 2)
+                XCTAssert(newTags.contains { $0.name == "Red" })
+                
+                let newMarsTag = newTags.first { $0.name == "Red" }
+                
+                XCTAssertEqual(newMarsTag?.id, 2)
             })
             
-            try app.testable().test(.POST, "/planet/1/tag", closure: { (resp) in
-                XCTAssert(resp.status == .ok)
+            let otherNewTag = Tag(id: 3, name: "Uninhabitable")
+            
+            try app.testable().test(.POST, "/planet/2/tag", json: otherNewTag, closure: { (resp) in
+                XCTAssertEqual(resp.status, .ok)
                 guard let bodyBuffer = resp.body.buffer else { XCTFail(); return }
                 
-                let decoded = try JSONDecoder().decode([Tag].self, from: bodyBuffer)
+                let decoded = try JSONDecoder().decode(Tag.self, from: bodyBuffer)
                 
-                XCTAssert(decoded.count == 1)
-                XCTAssert(decoded[0].name == "Life-Supporting")
-                XCTAssert(decoded[0].id == 1)
+                XCTAssertEqual(decoded.name, "Uninhabitable")
+                XCTAssertEqual(decoded.id, 3)
+                
+                let newTags = try app.db.query(Tag.self).all().wait()
+                
+                XCTAssertEqual(newTags.count, 2)
+                XCTAssert(newTags.contains { $0.name == "Red" })
+                
+                let newMarsTag = newTags.first { $0.name == "Red" }
+                
+                XCTAssertEqual(newMarsTag?.id, 2)
             })
             
-            try app.testable().test(.POST, "/tag/1/planet", closure: { (resp) in
-                XCTAssert(resp.status == .ok)
+            let otherNewPlanet = Planet(id: 3, name: "Venus", galaxyID: 2)
+            
+            try app.testable().test(.POST, "/tag/2/planet", json: otherNewPlanet, closure: { (resp) in
+                XCTAssertEqual(resp.status, .ok)
                 guard let bodyBuffer = resp.body.buffer else { XCTFail(); return }
                 
-                let decoded = try JSONDecoder().decode([Planet].self, from: bodyBuffer)
+                let decoded = try JSONDecoder().decode(Planet.self, from: bodyBuffer)
                 
-                XCTAssert(decoded.count == 1)
-                XCTAssert(decoded[0].name == "Earth")
-                XCTAssert(decoded[0].id == 1)
+                XCTAssertEqual(decoded.name, "Venus")
+                XCTAssertEqual(decoded.id, 3)
             })
         } catch {
             XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")
