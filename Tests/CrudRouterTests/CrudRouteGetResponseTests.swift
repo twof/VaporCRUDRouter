@@ -15,7 +15,7 @@ final class CrudRouteGetResponseTests: XCTestCase {
     override func setUp() {
         super.setUp()
         
-        app = Application()
+        app = Application(.testing)
         try! configure(app)
         
         try! app.migrator.setupIfNeeded().wait()
@@ -32,16 +32,15 @@ final class CrudRouteGetResponseTests: XCTestCase {
         app.crud(register: Galaxy.self)
         
         do {
-            try app.testable().test(.GET, "/galaxy", closure: { (resp) in
+            try app.testable().test(.GET, "/galaxy") { (resp) in
                 XCTAssert(resp.status == .ok)
-                guard let bodyBuffer = resp.body.buffer else { XCTFail(); return }
                 
-                let decoded = try JSONDecoder().decode([Galaxy].self, from: bodyBuffer)
+                let decoded = try resp.content.decode([Galaxy].self)
                 
                 XCTAssert(decoded.count == 1)
                 XCTAssert(decoded[0].name == "Milky Way")
                 XCTAssert(decoded[0].id == 1)
-            })
+            }
         } catch {
             XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")
         }
@@ -53,27 +52,25 @@ final class CrudRouteGetResponseTests: XCTestCase {
         }
         
         do {
-            try app.testable().test(.GET, "/galaxy", closure: { (resp) in
+            try app.testable().test(.GET, "/galaxy") { (resp) in
                 XCTAssert(resp.status == .ok)
-                guard let bodyBuffer = resp.body.buffer else { XCTFail(); return }
                 
-                let decoded = try JSONDecoder().decode([Galaxy].self, from: bodyBuffer)
+                let decoded = try resp.content.decode([Galaxy].self)
                 
                 XCTAssert(decoded.count == 1)
                 XCTAssert(decoded[0].name == "Milky Way")
                 XCTAssert(decoded[0].id == 1)
-            })
+            }
             
-            try app.testable().test(.GET, "/galaxy/1/planet", closure: { (resp) in
+            try app.testable().test(.GET, "/galaxy/1/planet") { (resp) in
                 XCTAssert(resp.status == .ok)
-                guard let bodyBuffer = resp.body.buffer else { XCTFail(); return }
                 
-                let decoded = try JSONDecoder().decode([Planet].self, from: bodyBuffer)
+                let decoded = try resp.content.decode([Planet].self)
                 
                 XCTAssert(decoded.count == 1)
                 XCTAssert(decoded[0].name == "Earth")
                 XCTAssert(decoded[0].id == 1)
-            })
+            }
         } catch {
             XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")
         }
@@ -85,26 +82,24 @@ final class CrudRouteGetResponseTests: XCTestCase {
         }
         
         do {
-            try app.testable().test(.GET, "/planet", closure: { (resp) in
+            try app.testable().test(.GET, "/planet") { (resp) in
                 XCTAssert(resp.status == .ok)
-                guard let bodyBuffer = resp.body.buffer else { XCTFail(); return }
                 
-                let decoded = try JSONDecoder().decode([Planet].self, from: bodyBuffer)
+                let decoded = try resp.content.decode([Planet].self)
                 
                 XCTAssert(decoded.count == 1)
                 XCTAssert(decoded[0].name == "Earth")
                 XCTAssert(decoded[0].id == 1)
-            })
+            }
             
-            try app.testable().test(.GET, "/planet/1/galaxy", closure: { (resp) in
+            try app.testable().test(.GET, "/planet/1/galaxy") { (resp) in
                 XCTAssert(resp.status == .ok)
-                guard let bodyBuffer = resp.body.buffer else { XCTFail(); return }
                 
-                let decoded = try JSONDecoder().decode(Galaxy.self, from: bodyBuffer)
+                let decoded = try resp.content.decode(Galaxy.self)
                 
                 XCTAssert(decoded.name == "Milky Way")
                 XCTAssert(decoded.id == 1)
-            })
+            }
         } catch {
             XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")
         }
@@ -120,49 +115,45 @@ final class CrudRouteGetResponseTests: XCTestCase {
         }
         
         do {
-            try app.testable().test(.GET, "/planet", closure: { (resp) in
+            try app.testable().test(.GET, "/planet") { (resp) in
                 XCTAssert(resp.status == .ok)
-                guard let bodyBuffer = resp.body.buffer else { XCTFail(); return }
                 
-                let decoded = try JSONDecoder().decode([Planet].self, from: bodyBuffer)
+                let decoded = try resp.content.decode([Planet].self)
                 
                 XCTAssert(decoded.count == 1)
                 XCTAssert(decoded[0].name == "Earth")
                 XCTAssert(decoded[0].id == 1)
-            })
+            }
             
-            try app.testable().test(.GET, "/tag", closure: { (resp) in
+            try app.testable().test(.GET, "/tag") { (resp) in
                 XCTAssert(resp.status == .ok)
-                guard let bodyBuffer = resp.body.buffer else { XCTFail(); return }
                 
-                let decoded = try JSONDecoder().decode([Tag].self, from: bodyBuffer)
+                let decoded = try resp.content.decode([Tag].self)
                 
                 XCTAssert(decoded.count == 1)
                 XCTAssert(decoded[0].name == "Life-Supporting")
                 XCTAssert(decoded[0].id == 1)
-            })
+            }
             
-            try app.testable().test(.GET, "/planet/1/tag", closure: { (resp) in
+            try app.testable().test(.GET, "/planet/1/tag") { (resp) in
                 XCTAssert(resp.status == .ok)
-                guard let bodyBuffer = resp.body.buffer else { XCTFail(); return }
                 
-                let decoded = try JSONDecoder().decode([Tag].self, from: bodyBuffer)
+                let decoded = try resp.content.decode([Tag].self)
                 
                 XCTAssert(decoded.count == 1)
                 XCTAssert(decoded[0].name == "Life-Supporting")
                 XCTAssert(decoded[0].id == 1)
-            })
+            }
             
-            try app.testable().test(.GET, "/tag/1/planet", closure: { (resp) in
+            try app.testable().test(.GET, "/tag/1/planet") { (resp) in
                 XCTAssert(resp.status == .ok)
-                guard let bodyBuffer = resp.body.buffer else { XCTFail(); return }
                 
-                let decoded = try JSONDecoder().decode([Planet].self, from: bodyBuffer)
+                let decoded = try resp.content.decode([Planet].self)
                 
                 XCTAssert(decoded.count == 1)
                 XCTAssert(decoded[0].name == "Earth")
                 XCTAssert(decoded[0].id == 1)
-            })
+            }
         } catch {
             XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")
         }

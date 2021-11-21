@@ -7,27 +7,30 @@ public protocol CrudParentControllerProtocol {
 
     var relation: KeyPath<ChildType, ParentProperty<ChildType, ParentType>> { get }
 
-    func index(_ req: Request) throws -> EventLoopFuture<ParentType>
-    func update(_ req: Request) throws -> EventLoopFuture<ParentType>
+    func index(_ req: Request) async throws -> ParentType
+    func update(_ req: Request) async throws -> ParentType
 }
 
 public extension CrudParentControllerProtocol {
-    func index(_ req: Request) throws -> EventLoopFuture<ParentType> {
+    func index(_ req: Request) async throws -> ParentType {
         let childId = try req.getId(modelType: ChildType.self)
 
-        return ChildType.find(childId, on: req.db).unwrap(or: Abort(.notFound)).flatMap { child in
-            child[keyPath: self.relation].get(on: req.db)
+        guard let child = try await ChildType.find(childId, on: req.db) else {
+            throw Abort(.notFound)
         }
+
+        return try await child[keyPath: self.relation].get(on: req.db)
     }
 
-    func update(_ req: Request) throws -> EventLoopFuture<ParentType> {
-        let childId = try req.getId(modelType: ChildType.self)
+    func update(_ req: Request) async throws -> ParentType {
+//        let childId = try req.getId(modelType: ChildType.self)
+        let parentId = try req.getId(modelType: ParentType.self)
+        let newParent = try req.content.decode(ParentType.self)
+        // TODO: make sure this actually updates the parent
 
-        return ChildType
-            .find(childId, on: req.db)
-            .unwrap(or: Abort(.notFound))
-            .flatMap { child in
-                return child[keyPath: self.relation].get(on: req.db)
-        }
+        let temp = newParent
+        temp.id = parentId
+        try await temp.update(on: req.db)
+        return temp
     }
 }

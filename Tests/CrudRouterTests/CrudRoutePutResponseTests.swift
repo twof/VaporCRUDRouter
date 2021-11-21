@@ -34,12 +34,12 @@ final class CrudRoutePutResponseTests: XCTestCase {
         do {
             let existingGalaxy = Galaxy(id: 1, name: "Milky Way 2")
             
-            try app.testable().test(.PUT, "/galaxy/1", json: existingGalaxy, closure: { (resp) in
+            try app.testable().test(.PUT, "/galaxy/1", beforeRequest: { req in
+                try req.content.encode(existingGalaxy)
+            }) { (resp) in
                 XCTAssertEqual(resp.status, .ok)
                 
-                guard let bodyBuffer = resp.body.buffer else { XCTFail(); return }
-                
-                let decoded = try JSONDecoder().decode(Galaxy.self, from: bodyBuffer)
+                let decoded = try resp.content.decode(Galaxy.self)
                 
                 XCTAssertEqual(decoded.name, "Milky Way 2")
                 XCTAssertEqual(decoded.id, 1)
@@ -52,7 +52,7 @@ final class CrudRoutePutResponseTests: XCTestCase {
                 let newMilkyWay = newGalaxies.first { $0.name == "Milky Way 2" }
                 
                 XCTAssertEqual(newMilkyWay?.id, 1)
-            })
+            }
         } catch {
             XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")
         }
@@ -66,11 +66,12 @@ final class CrudRoutePutResponseTests: XCTestCase {
         do {
             let existingGalaxy = Galaxy(id: 1, name: "Milky Way 2")
             
-            try app.testable().test(.PUT, "/galaxy/1", json: existingGalaxy, closure: { (resp) in
+            try app.testable().test(.PUT, "/galaxy/1", beforeRequest: { req in
+                try req.content.encode(existingGalaxy)
+            }) { (resp) in
                 XCTAssertEqual(resp.status, .ok)
-                guard let bodyBuffer = resp.body.buffer else { XCTFail(); return }
                 
-                let decoded = try JSONDecoder().decode(Galaxy.self, from: bodyBuffer)
+                let decoded = try resp.content.decode(Galaxy.self)
                 
                 XCTAssertEqual(decoded.name, "Milky Way 2")
                 XCTAssertEqual(decoded.id, 1)
@@ -83,15 +84,16 @@ final class CrudRoutePutResponseTests: XCTestCase {
                 let newAndromeda = newGalaxies.first { $0.name == "Milky Way 2" }
                 
                 XCTAssertEqual(newAndromeda?.id, 1)
-            })
+            }
             
             let existingPlanet = Planet(name: "Earth 2", galaxyID: 1)
             
-            try app.testable().test(.PUT, "/galaxy/1/planet/", json: existingPlanet, closure: { (resp) in
+            try app.testable().test(.PUT, "/galaxy/1/planet/", beforeRequest: { req in
+                try req.content.encode(existingGalaxy)
+            }) { (resp) in
                 XCTAssertEqual(resp.status, .ok)
-                guard let bodyBuffer = resp.body.buffer else { XCTFail(); return }
                 
-                let decoded = try JSONDecoder().decode(Planet.self, from: bodyBuffer)
+                let decoded = try resp.content.decode(Planet.self)
                 
                 XCTAssertEqual(decoded.name, "Earth 2")
                 XCTAssertEqual(decoded.id, 1)
@@ -106,7 +108,7 @@ final class CrudRoutePutResponseTests: XCTestCase {
                 let newEarth = newPlanets.first { $0.name == "Earth 2" }
                 
                 XCTAssertEqual(newEarth?.id, 1)
-            })
+            }
         } catch {
             XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")
         }
@@ -120,11 +122,12 @@ final class CrudRoutePutResponseTests: XCTestCase {
         do {
             let existingPlanet = Planet(name: "Earth 2", galaxyID: 1)
             
-            try app.testable().test(.PUT, "/planet/1", json: existingPlanet, closure: { (resp) in
+            try app.testable().test(.PUT, "/planet/1", beforeRequest: { req in
+                try req.content.encode(existingPlanet)
+            }) { (resp) in
                 XCTAssertEqual(resp.status, .ok)
-                guard let bodyBuffer = resp.body.buffer else { XCTFail(); return }
                
-                let decoded = try JSONDecoder().decode(Planet.self, from: bodyBuffer)
+                let decoded = try resp.content.decode(Planet.self)
                
                 XCTAssertEqual(decoded.name, "Earth 2")
                 XCTAssertEqual(decoded.id, 1)
@@ -139,13 +142,15 @@ final class CrudRoutePutResponseTests: XCTestCase {
                 let newMars = newPlanets.first { $0.name == "Earth 2" }
                
                 XCTAssertEqual(newMars?.id, 1)
-            })
+            }
             
             let existingGalaxy = Galaxy(id: 1, name: "Milky Way 2")
             
-            try app.testable().test(.PUT, "/planet/1/galaxy", json: existingGalaxy, closure: { (resp) in
+            try app.testable().test(.PUT, "/planet/1/galaxy", beforeRequest: { req in
+                try req.content.encode(existingGalaxy)
+            }) { (resp) in
                 XCTAssertEqual(resp.status, .notFound)
-            })
+            }
         } catch {
             XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")
         }
@@ -163,11 +168,12 @@ final class CrudRoutePutResponseTests: XCTestCase {
         do {
             let existingPlanet = Planet(name: "Earth 2", galaxyID: 1)
             
-            try app.testable().test(.PUT, "/planet/1", json: existingPlanet, closure: { (resp) in
+            try app.testable().test(.PUT, "/planet/1", beforeRequest: { req in
+                try req.content.encode(existingPlanet)
+            }) { (resp) in
                 XCTAssertEqual(resp.status, .ok)
-                guard let bodyBuffer = resp.body.buffer else { XCTFail(); return }
                 
-                let decoded = try JSONDecoder().decode(Planet.self, from: bodyBuffer)
+                let decoded = try resp.content.decode(Planet.self)
                 
                 XCTAssertEqual(decoded.name, "Earth 2")
                 XCTAssertEqual(decoded.id, 1)
@@ -181,15 +187,16 @@ final class CrudRoutePutResponseTests: XCTestCase {
                 let newMars = newPlanets.first { $0.name == "Earth 2" }
                 
                 XCTAssertEqual(newMars?.id, 1)
-            })
+            }
             
             let existingTag = Tag(id: 1, name: "Kind of Life Supporting")
             
-            try app.testable().test(.PUT, "/tag/1", json: existingTag, closure: { (resp) in
+            try app.testable().test(.PUT, "/tag/1", beforeRequest: { req in
+                try req.content.encode(existingTag)
+            }) { (resp) in
                 XCTAssertEqual(resp.status, .ok)
-                guard let bodyBuffer = resp.body.buffer else { XCTFail(); return }
                 
-                let decoded = try JSONDecoder().decode(Tag.self, from: bodyBuffer)
+                let decoded = try resp.content.decode(Tag.self)
                 
                 XCTAssertEqual(decoded.name, "Kind of Life Supporting")
                 XCTAssertEqual(decoded.id, 1)
@@ -202,15 +209,16 @@ final class CrudRoutePutResponseTests: XCTestCase {
                 let newMarsTag = newTags.first { $0.name == "Kind of Life Supporting" }
                 
                 XCTAssertEqual(newMarsTag?.id, 1)
-            })
+            }
             
             let otherExistingTag = Tag(id: 3, name: "Sort of Life Supporting")
             
-            try app.testable().test(.PUT, "/planet/1/tag/1", json: otherExistingTag, closure: { (resp) in
+            try app.testable().test(.PUT, "/planet/1/tag/1", beforeRequest: { req in
+                try req.content.encode(otherExistingTag)
+            }) { (resp) in
                 XCTAssertEqual(resp.status, .ok)
-                guard let bodyBuffer = resp.body.buffer else { XCTFail(); return }
-                
-                let decoded = try JSONDecoder().decode(Tag.self, from: bodyBuffer)
+
+                let decoded = try resp.content.decode(Tag.self)
                 
                 XCTAssertEqual(decoded.name, "Sort of Life Supporting")
                 XCTAssertEqual(decoded.id, 1)
@@ -223,19 +231,20 @@ final class CrudRoutePutResponseTests: XCTestCase {
                 let newEarthTag = newTags.first { $0.name == "Sort of Life Supporting" }
                 
                 XCTAssertEqual(newEarthTag?.id, 1)
-            })
+            }
             
             let otherExistingPlanet = Planet(name: "Earth 3", galaxyID: 1)
             
-            try app.testable().test(.PUT, "/tag/1/planet/1", json: otherExistingPlanet, closure: { (resp) in
+            try app.testable().test(.PUT, "/tag/1/planet/1", beforeRequest: { req in
+                try req.content.encode(otherExistingPlanet)
+            }) { (resp) in
                 XCTAssertEqual(resp.status, .ok)
-                guard let bodyBuffer = resp.body.buffer else { XCTFail(); return }
                 
-                let decoded = try JSONDecoder().decode(Planet.self, from: bodyBuffer)
+                let decoded = try resp.content.decode(Planet.self)
                 
                 XCTAssertEqual(decoded.name, "Earth")
                 XCTAssertEqual(decoded.id, 1)
-            })
+            }
         } catch {
             XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")
         }

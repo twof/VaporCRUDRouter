@@ -14,6 +14,7 @@ extension EventLoopFuture {
     }
 }
 
+// TODO: Do these proocols actually need to be public?
 public protocol CrudSiblingsControllerProtocol {
     associatedtype ParentType: Model & Content where ParentType.IDValue: LosslessStringConvertible
     associatedtype ChildType: Model & Content where ChildType.IDValue: LosslessStringConvertible
@@ -21,53 +22,54 @@ public protocol CrudSiblingsControllerProtocol {
 
     var siblings: KeyPath<ParentType, SiblingsProperty<ParentType, ChildType, ThroughType>> { get }
 
-    func index(_ req: Request) throws -> EventLoopFuture<ChildType>
-    func indexAll(_ req: Request) throws -> EventLoopFuture<[ChildType]>
-    func update(_ req: Request) throws -> EventLoopFuture<ChildType>
+    func index(_ req: Request) async throws -> ChildType
+    func indexAll(_ req: Request) async throws -> [ChildType]
+    func update(_ req: Request) async throws -> ChildType
 }
 
 public extension CrudSiblingsControllerProtocol {
-    func index(_ req: Request) throws -> EventLoopFuture<ChildType> {
+    func index(_ req: Request) async throws -> ChildType {
         let parentId = try req.getId(modelType: ParentType.self)
+        let childId = try req.getId(modelType: ChildType.self)
 
-        return try ParentType.find(parentId, on: req.db).unwrap(or: Abort(.notFound)).throwingFlatMap { parent -> EventLoopFuture<ChildType> in
-
-            return try parent[keyPath: self.siblings]
-                .query(on: req.db)
-                .first()
-                .unwrap(or: Abort(.notFound))
+        // TODO: childId isn't being used. This probably isn't correct.
+        guard
+            let parent = try await ParentType.find(parentId, on: req.db),
+            let child = try await parent[keyPath: self.siblings].query(on: req.db).first()
+        else {
+            throw Abort(.notFound)
         }
+
+        return child
     }
 
-    func indexAll(_ req: Request) throws -> EventLoopFuture<[ChildType]> {
+    func indexAll(_ req: Request) async throws -> [ChildType] {
         let parentId = try req.getId(modelType: ParentType.self)
 
-        return try ParentType.find(parentId, on: req.db).unwrap(or: Abort(.notFound)).throwingFlatMap { parent -> EventLoopFuture<[ChildType]> in
-            let siblingsRelation = parent[keyPath: self.siblings]
-            return try siblingsRelation
-                .query(on: req.db)
-                .all()
+        guard let parent = try await ParentType.find(parentId, on: req.db) else {
+            throw Abort(.notFound)
         }
+
+        return try await parent[keyPath: self.siblings].query(on: req.db).all()
     }
 
-    func update(_ req: Request) throws -> EventLoopFuture<ChildType> {
+    func update(_ req: Request) async throws -> ChildType {
         let parentId = try req.getId(modelType: ParentType.self)
+        let childId = try req.getId(modelType: ChildType.self)
 
-        return try ParentType
-            .find(parentId, on: req.db)
-            .unwrap(or: Abort(.notFound))
-            .throwingFlatMap { parent -> EventLoopFuture<ChildType> in
-                let siblings: SiblingsProperty<ParentType, ChildType, ThroughType> = parent[keyPath: self.siblings]
-                let siblingsQuery = try siblings.query(on: req.db)
-                return siblingsQuery
-                    .first()
-                    .unwrap(or: Abort(.notFound))
-            }.throwingFlatMap { oldChild in
-                let newChild = try req.content.decode(ChildType.self)
-                let temp = newChild
-                temp.id = oldChild.id
-                return temp.update(on: req.db).transform(to: temp)
-            }
+        // TODO: Make sure this actually updates the siblings. Parent is never used.
+        guard
+            let parent = try await ParentType.find(parentId, on: req.db)
+        else {
+            throw Abort(.notFound)
+        }
+
+        let newChild = try req.content.decode(ChildType.self)
+        let temp = newChild
+        temp.id = childId
+
+        try await temp.update(on: req.db)
+        return temp
     }
 }
 
@@ -76,33 +78,34 @@ public extension CrudSiblingsControllerProtocol
 //    ThroughType.Left == ParentType,
 //    ThroughType.Right == ChildType
 {
-    func create(_ req: Request) throws -> EventLoopFuture<ChildType> {
+    func create(_ req: Request) async throws -> ChildType {
         let parentId = try req.getId(modelType: ParentType.self)
 
-        return try ParentType.find(parentId, on: req.db).unwrap(or: Abort(.notFound)).throwingFlatMap { parent -> EventLoopFuture<ChildType> in
-            let child = try req.content.decode(ChildType.self)
-            
-            let relation = parent[keyPath: self.siblings]
-            return relation.attach(child, on: req.db).transform(to: child)
+        guard let parent = try await ParentType.find(parentId, on: req.db) else {
+            throw Abort(.notFound)
         }
+
+        let newChild = try req.content.decode(ChildType.self)
+        try await parent[keyPath: self.siblings].attach(newChild, on: req.db)
+        return newChild
     }
 
-    func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
+    func delete(_ req: Request) async throws -> HTTPStatus {
         let parentId = try req.getId(modelType: ParentType.self)
 
-        return try ParentType
-            .find(parentId, on: req.db)
-            .unwrap(or: Abort(.notFound))
-            .throwingFlatMap { parent -> EventLoopFuture<HTTPStatus> in
-                let siblingsRelation = parent[keyPath: self.siblings]
-                return try siblingsRelation
-                    .query(on: req.db)
-                    .first()
-                    .unwrap(or: Abort(.notFound))
-                    .flatMap { siblingsRelation.detach($0, on: req.db).transform(to: $0) }
-                    .delete(on: req.db)
-                    .transform(to: HTTPStatus.ok)
+        guard let parent = try await ParentType.find(parentId, on: req.db) else {
+            throw Abort(.notFound)
         }
+
+        let siblingsRelation = parent[keyPath: self.siblings]
+
+        guard let child = try await siblingsRelation.query(on: req.db).first() else {
+            throw Abort(.notFound)
+        }
+
+        try await siblingsRelation.detach(child, on: req.db)
+        try await child.delete(on: req.db)
+        return HTTPStatus.ok
     }
 }
 
