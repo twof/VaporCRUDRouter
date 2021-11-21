@@ -31,45 +31,42 @@ public extension CrudChildrenControllerProtocol {
 
     func indexAll(_ req: Request) async throws -> [ChildType] {
         let parentId = try req.getId(modelType: ParentType.self)
-        return try ParentType
-            .find(parentId, on: req.db)
-            .unwrap(or: Abort(.notFound))
-            .throwingFlatMap { parent -> EventLoopFuture<[ChildType]> in
-                return try parent[keyPath: self.children]
-                    .query(on: req.db)
-                    .all()
-            }
+
+        guard let parent = try await ParentType.find(parentId, on: req.db) else {
+            throw Abort(.notFound)
+        }
+
+        return try await parent[keyPath: self.children].query(on: req.db).all()
     }
 
     func create(_ req: Request) async throws -> ChildType {
         let parentId = try req.getId(modelType: ParentType.self)
 
-        return try ParentType
-            .find(parentId, on: req.db)
-            .unwrap(or: Abort(.notFound))
-            .throwingFlatMap { parent -> EventLoopFuture<ChildType> in
-                let child = try req.content.decode(ChildType.self)
-                return child.save(on: req.db).transform(to: child)
+        guard let parent = try await ParentType.find(parentId, on: req.db) else {
+            throw Abort(.notFound)
         }
+
+        let child = try req.content.decode(ChildType.self)
+        try await parent[keyPath: self.children].create(child, on: req.db)
+
+        return child
     }
 
     func update(_ req: Request) async throws -> ChildType {
         let parentId = try req.getId(modelType: ParentType.self)
 
-        return try ParentType
-            .find(parentId, on: req.db)
-            .unwrap(or: Abort(.notFound))
-            .throwingFlatMap { parent -> EventLoopFuture<ChildType> in
-                return try parent[keyPath: self.children]
-                    .query(on: req.db)
-                    .first()
-                    .unwrap(or: Abort(.notFound))
-            }.throwingFlatMap { oldChild in
-                let newChild = try req.content.decode(ChildType.self)
-                let temp = newChild
-                temp.id = oldChild.id
-                return temp.update(on: req.db).transform(to: temp)
+        guard
+            let parent = try await ParentType.find(parentId, on: req.db),
+            let oldChild = try await parent[keyPath: self.children].query(on: req.db).first()
+        else {
+            throw Abort(.notFound)
         }
+
+        let newChild = try req.content.decode(ChildType.self)
+        let temp = newChild
+        temp.id = oldChild.id
+        try await temp.update(on: req.db)
+        return temp
     }
 
     func delete(_ req: Request) async throws -> HTTPStatus {
