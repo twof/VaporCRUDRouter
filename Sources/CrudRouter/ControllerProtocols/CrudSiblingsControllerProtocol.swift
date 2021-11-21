@@ -19,7 +19,7 @@ public protocol CrudSiblingsControllerProtocol {
     associatedtype ChildType: Model & Content where ChildType.IDValue: LosslessStringConvertible
     associatedtype ThroughType: Model
 
-    var siblings: KeyPath<ParentType, Siblings<ParentType, ChildType, ThroughType>> { get }
+    var siblings: KeyPath<ParentType, SiblingsProperty<ParentType, ChildType, ThroughType>> { get }
 
     func index(_ req: Request) throws -> EventLoopFuture<ChildType>
     func indexAll(_ req: Request) throws -> EventLoopFuture<[ChildType]>
@@ -57,7 +57,7 @@ public extension CrudSiblingsControllerProtocol {
             .find(parentId, on: req.db)
             .unwrap(or: Abort(.notFound))
             .throwingFlatMap { parent -> EventLoopFuture<ChildType> in
-                let siblings: Siblings<ParentType, ChildType, ThroughType> = parent[keyPath: self.siblings]
+                let siblings: SiblingsProperty<ParentType, ChildType, ThroughType> = parent[keyPath: self.siblings]
                 let siblingsQuery = try siblings.query(on: req.db)
                 return siblingsQuery
                     .first()

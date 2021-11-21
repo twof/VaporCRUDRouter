@@ -3,19 +3,17 @@ import FluentKit
 import Fluent
 import NIOExtras
 
-extension EventLoopFuture where Value: Model {
-    func delete(on db: Database) -> EventLoopFuture<Void> {
-        return self.map { model in
-            return model.delete(on: db)
-        }
-    }
-}
+//extension EventLoopFuture where Value: Model {
+//    func delete(on db: Database) async -> Void {
+//      return model.delete(on: db)
+//    }
+//}
 
 public protocol CrudChildrenControllerProtocol {
     associatedtype ParentType: Model & Content where ParentType.IDValue: LosslessStringConvertible
     associatedtype ChildType: Model & Content where ChildType.IDValue: LosslessStringConvertible
 
-    var children: KeyPath<ParentType, Children<ParentType, ChildType>> { get }
+    var children: KeyPath<ParentType, ChildrenProperty<ParentType, ChildType>> { get }
 
     func index(_ req: Request) throws -> EventLoopFuture<ChildType>
     func indexAll(_ req: Request) throws -> EventLoopFuture<[ChildType]>
@@ -82,19 +80,16 @@ public extension CrudChildrenControllerProtocol {
         }
     }
 
-    func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
+    func delete(_ req: Request) async throws -> HTTPStatus {
         let parentId = try req.getId(modelType: ParentType.self)
-
-        return try ParentType
-            .find(parentId, on: req.db)
-            .unwrap(or: Abort(.notFound))
-            .throwingFlatMap { parent -> EventLoopFuture<HTTPStatus> in
-                return try parent[keyPath: self.children]
-                    .query(on: req.db)
-                    .first()
-                    .unwrap(or: Abort(.notFound))
-                    .delete(on: req.db)
-                    .transform(to: HTTPStatus.ok)
+        guard
+            let parent = await ParentType.find(parentId, on: req.db),
+            let child = try await parent[keyPath: self.children].query(on: req.db).first()
+        {
+            throw Abort(.notFound)
         }
+
+        try await child.delete(on: req.db)
+        return HTTPStatus.ok
     }
 }

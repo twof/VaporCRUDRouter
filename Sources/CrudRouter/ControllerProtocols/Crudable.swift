@@ -6,7 +6,7 @@ public protocol Crudable: ControllerProtocol {
 
     func crud<ParentType>(
         at path: PathComponent...,
-        parent relation: KeyPath<ChildType, Parent<ParentType>>,
+        parent relation: KeyPath<ChildType, ParentProperty<ChildType, ParentType>>,
         _ either: OnlyExceptEither<ParentRouterMethod>,
         relationConfiguration: ((CrudParentController<ChildType, ParentType>) -> Void)?
     ) where
@@ -16,7 +16,7 @@ public protocol Crudable: ControllerProtocol {
 
     func crud<ChildChildType>(
         at path: PathComponent...,
-        children relation: KeyPath<ChildType, Children<ChildType, ChildChildType>>,
+        children relation: KeyPath<ChildType, ChildrenProperty<ChildType, ChildChildType>>,
         _ either: OnlyExceptEither<ChildrenRouterMethod>,
         relationConfiguration: ((CrudChildrenController<ChildChildType, ChildType>) -> Void)?
     ) where
@@ -25,7 +25,7 @@ public protocol Crudable: ControllerProtocol {
 
     func crud<ChildChildType, ThroughType>(
         at path: PathComponent...,
-        siblings relation: KeyPath<ChildType, Siblings<ChildType, ChildChildType, ThroughType>>,
+        siblings relation: KeyPath<ChildType, SiblingsProperty<ChildType, ChildChildType, ThroughType>>,
         _ either: OnlyExceptEither<ModifiableSiblingRouterMethod>,
         relationConfiguration: ((CrudSiblingsController<ChildChildType, ChildType, ThroughType>) -> Void)?
     ) where
@@ -51,7 +51,7 @@ public protocol Crudable: ControllerProtocol {
 extension Crudable {
     public func crud<ParentType>(
         at path: PathComponent...,
-        parent relation: KeyPath<ChildType, Parent<ParentType>>,
+        parent relation: KeyPath<ChildType, ParentProperty<ChildType, ParentType>>,
         _ either: OnlyExceptEither<ParentRouterMethod> = .only([.read, .update]),
         relationConfiguration: ((CrudParentController<ChildType, ParentType>) -> Void)?=nil
     ) where
@@ -82,7 +82,7 @@ extension Crudable {
 
     public func crud<ChildChildType>(
         at path: PathComponent...,
-        children relation: KeyPath<ChildType, Children<ChildType, ChildChildType>>,
+        children relation: KeyPath<ChildType, ChildrenProperty<ChildType, ChildChildType>>,
         _ either: OnlyExceptEither<ChildrenRouterMethod> = .only([.read, .readAll, .create, .update, .delete]),
         relationConfiguration: ((CrudChildrenController<ChildChildType, ChildType>) -> Void)?=nil
     ) where
@@ -112,7 +112,7 @@ extension Crudable {
 
     public func crud<ChildChildType, ThroughType>(
         at path: PathComponent...,
-        siblings relation: KeyPath<ChildType, Siblings<ChildType, ChildChildType, ThroughType>>,
+        siblings relation: KeyPath<ChildType, SiblingsProperty<ChildType, ChildChildType, ThroughType>>,
         _ either: OnlyExceptEither<ModifiableSiblingRouterMethod> = .only([.read, .readAll, .create, .update, .delete]),
         relationConfiguration: ((CrudSiblingsController<ChildChildType, ChildType, ThroughType>) -> Void)?=nil
     ) where

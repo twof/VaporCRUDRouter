@@ -7,13 +7,13 @@ public struct CrudParentController<ChildT: Model & Content, ParentT: Model & Con
     public typealias ParentType = ParentT
     public typealias ChildType = ChildT
 
-    public let relation: KeyPath<ChildType, Parent<ParentType>>
+    public let relation: KeyPath<ChildType, ParentProperty<ChildType, ParentType>>
     public let path: [PathComponent]
     public let router: RoutesBuilder
     let activeMethods: Set<ParentRouterMethod>
 
     init(
-        relation: KeyPath<ChildType, Parent<ParentType>>,
+        relation: KeyPath<ChildType, ParentProperty<ChildType, ParentType>>,
         path: [PathComponent],
         router: RoutesBuilder,
         activeMethods: Set<ParentRouterMethod>

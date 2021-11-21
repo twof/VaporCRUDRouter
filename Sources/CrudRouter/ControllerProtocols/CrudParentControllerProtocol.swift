@@ -5,7 +5,7 @@ public protocol CrudParentControllerProtocol {
     associatedtype ParentType: Model & Content where ParentType.IDValue: LosslessStringConvertible
     associatedtype ChildType: Model & Content where ChildType.IDValue: LosslessStringConvertible
 
-    var relation: KeyPath<ChildType, Parent<ParentType>> { get }
+    var relation: KeyPath<ChildType, ParentProperty<ChildType, ParentType>> { get }
 
     func index(_ req: Request) throws -> EventLoopFuture<ParentType>
     func update(_ req: Request) throws -> EventLoopFuture<ParentType>

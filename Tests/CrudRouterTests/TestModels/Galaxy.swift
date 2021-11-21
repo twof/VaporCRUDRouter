@@ -1,5 +1,5 @@
 import Vapor
-import FluentSQLiteDriver
+import FluentKit
 import CrudRouter
 
 public final class Galaxy: Model, Content {
