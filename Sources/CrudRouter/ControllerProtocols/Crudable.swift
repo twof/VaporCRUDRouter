@@ -11,7 +11,6 @@ public protocol Crudable: ControllerProtocol {
         relationConfiguration: ((CrudParentController<ChildType, ParentType>) -> Void)?
     ) where
         ParentType: Model & Content,
-//        ChildType.Database == ParentType.Database,
         ParentType.IDValue: LosslessStringConvertible
 
     func crud<ChildChildType>(
@@ -21,7 +20,6 @@ public protocol Crudable: ControllerProtocol {
         relationConfiguration: ((CrudChildrenController<ChildChildType, ChildType>) -> Void)?
     ) where
         ChildChildType: Model & Content
-//        ChildType.Database == ChildChildType.Database
 
     func crud<ChildChildType, ThroughType>(
         at path: PathComponent...,
@@ -32,8 +30,6 @@ public protocol Crudable: ControllerProtocol {
         ChildChildType: Content,
         ChildChildType.IDValue: LosslessStringConvertible,
         ThroughType: Model
-//        ThroughType.Left == ChildType,
-//        ThroughType.Right == ChildChildType
 
 //    func crud<ChildChildType, ThroughType>(
 //        at path: PathComponent...,

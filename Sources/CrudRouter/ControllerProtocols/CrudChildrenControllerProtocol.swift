@@ -3,41 +3,33 @@ import FluentKit
 import Fluent
 import NIOExtras
 
-//extension EventLoopFuture where Value: Model {
-//    func delete(on db: Database) async -> Void {
-//      return model.delete(on: db)
-//    }
-//}
-
 public protocol CrudChildrenControllerProtocol {
     associatedtype ParentType: Model & Content where ParentType.IDValue: LosslessStringConvertible
     associatedtype ChildType: Model & Content where ChildType.IDValue: LosslessStringConvertible
 
     var children: KeyPath<ParentType, ChildrenProperty<ParentType, ChildType>> { get }
 
-    func index(_ req: Request) throws -> EventLoopFuture<ChildType>
-    func indexAll(_ req: Request) throws -> EventLoopFuture<[ChildType]>
-    func create(_ req: Request) throws -> EventLoopFuture<ChildType>
-    func update(_ req: Request) throws -> EventLoopFuture<ChildType>
-    func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus>
+    func index(_ req: Request) async throws -> ChildType
+    func indexAll(_ req: Request) async throws -> [ChildType]
+    func create(_ req: Request) async throws -> ChildType
+    func update(_ req: Request) async throws -> ChildType
+    func delete(_ req: Request) async throws -> HTTPStatus
 }
 
 public extension CrudChildrenControllerProtocol {
-    func index(_ req: Request) throws -> EventLoopFuture<ChildType> {
+    func index(_ req: Request) async throws -> ChildType {
         let parentId = try req.getId(modelType: ParentType.self)
-        
-        return try ParentType
-            .find(parentId, on: req.db)
-            .unwrap(or: Abort(.notFound))
-            .throwingFlatMap { parent -> EventLoopFuture<ChildType> in
-                return try parent[keyPath: self.children]
-                    .query(on: req.db)
-                    .first()
-                    .unwrap(or: Abort(.notFound))
-            }
+        guard
+            let parent = try await ParentType.find(parentId, on: req.db),
+            let child = try await parent[keyPath: self.children].query(on: req.db).first()
+        else {
+            throw Abort(.notFound)
+        }
+
+        return child
     }
 
-    func indexAll(_ req: Request) throws -> EventLoopFuture<[ChildType]> {
+    func indexAll(_ req: Request) async throws -> [ChildType] {
         let parentId = try req.getId(modelType: ParentType.self)
         return try ParentType
             .find(parentId, on: req.db)
@@ -49,7 +41,7 @@ public extension CrudChildrenControllerProtocol {
             }
     }
 
-    func create(_ req: Request) throws -> EventLoopFuture<ChildType> {
+    func create(_ req: Request) async throws -> ChildType {
         let parentId = try req.getId(modelType: ParentType.self)
 
         return try ParentType
@@ -61,7 +53,7 @@ public extension CrudChildrenControllerProtocol {
         }
     }
 
-    func update(_ req: Request) throws -> EventLoopFuture<ChildType> {
+    func update(_ req: Request) async throws -> ChildType {
         let parentId = try req.getId(modelType: ParentType.self)
 
         return try ParentType
@@ -83,9 +75,9 @@ public extension CrudChildrenControllerProtocol {
     func delete(_ req: Request) async throws -> HTTPStatus {
         let parentId = try req.getId(modelType: ParentType.self)
         guard
-            let parent = await ParentType.find(parentId, on: req.db),
+            let parent = try await ParentType.find(parentId, on: req.db),
             let child = try await parent[keyPath: self.children].query(on: req.db).first()
-        {
+        else {
             throw Abort(.notFound)
         }
 
