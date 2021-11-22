@@ -8,6 +8,7 @@
 import FluentSQLiteDriver
 import Fluent
 import XCTVapor
+import Foundation
 
 final class CrudRoutePostResponseTests: XCTestCase {
     var app: Application!
@@ -17,15 +18,13 @@ final class CrudRoutePostResponseTests: XCTestCase {
         
         app = Application(.testing)
         try! configure(app)
-        
-        try! app.migrator.setupIfNeeded().wait()
-        try! app.migrator.prepareBatch().wait()
+
+        try! app.autoRevert().wait()
+        try! app.autoMigrate().wait()
     }
     
     override func tearDown() {
         super.tearDown()
-        
-        try! app.migrator.revertAllBatches().wait()
         app.shutdown()
     }
     
@@ -33,7 +32,8 @@ final class CrudRoutePostResponseTests: XCTestCase {
         app.crud(register: Galaxy.self)
         
         do {
-            let newGalaxy = Galaxy(name: "Andromeda")
+            let newGalaxyId = UUID()
+            let newGalaxy = Galaxy(id: newGalaxyId, name: "Andromeda")
             try app.testable().test(.POST, "/galaxy", beforeRequest: { req in
                 try req.content.encode(newGalaxy)
             }) { (resp) in
@@ -42,7 +42,7 @@ final class CrudRoutePostResponseTests: XCTestCase {
                 let decoded = try resp.content.decode(Galaxy.self)
 
                 XCTAssertEqual(decoded.name, "Andromeda")
-                XCTAssertEqual(decoded.id, 2)
+                XCTAssertEqual(decoded.id, newGalaxyId)
 
                 let newGalaxies = try app.db.query(Galaxy.self).all().wait()
 
@@ -51,7 +51,7 @@ final class CrudRoutePostResponseTests: XCTestCase {
 
                 let newAndromeda = newGalaxies.first { $0.name == "Andromeda" }
 
-                XCTAssertEqual(newAndromeda?.id, 2)
+                XCTAssertEqual(newAndromeda?.id, newGalaxyId)
             }
         } catch {
             XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")
@@ -64,7 +64,8 @@ final class CrudRoutePostResponseTests: XCTestCase {
         }
         
         do {
-            let newGalaxy = Galaxy(name: "Andromeda")
+            let newGalaxyId = UUID()
+            let newGalaxy = Galaxy(id: newGalaxyId, name: "Andromeda")
             
             try app.testable().test(.POST, "/galaxy", beforeRequest: { req in
                 try req.content.encode(newGalaxy)
@@ -74,7 +75,7 @@ final class CrudRoutePostResponseTests: XCTestCase {
                 let decoded = try resp.content.decode(Galaxy.self)
                 
                 XCTAssertEqual(decoded.name, "Andromeda")
-                XCTAssertEqual(decoded.id, 2)
+                XCTAssertEqual(decoded.id, newGalaxyId)
                 
                 let newGalaxies = try app.db.query(Galaxy.self).all().wait()
                 
@@ -83,12 +84,13 @@ final class CrudRoutePostResponseTests: XCTestCase {
                 
                 let newAndromeda = newGalaxies.first { $0.name == "Andromeda" }
                 
-                XCTAssertEqual(newAndromeda?.id, 2)
+                XCTAssertEqual(newAndromeda?.id, newGalaxyId)
             }
+
+            let newPlanetId = UUID()
+            let newPlanet = Planet(id: newPlanetId, name: "Mars", galaxyID: newGalaxyId)
             
-            let newPlanet = Planet(name: "Mars", galaxyID: 2)
-            
-            try app.testable().test(.POST, "/galaxy/1/planet", beforeRequest: { req in
+            try app.testable().test(.POST, "/galaxy/\(BaseGalaxySeeding.milkyWayId)/planet", beforeRequest: { req in
                 try req.content.encode(newPlanet)
             }) { (resp) in
                 XCTAssertEqual(resp.status, .ok)
@@ -96,8 +98,8 @@ final class CrudRoutePostResponseTests: XCTestCase {
                 let decoded = try resp.content.decode(Planet.self)
                 
                 XCTAssertEqual(decoded.name, "Mars")
-                XCTAssertEqual(decoded.id, 2)
-                XCTAssertEqual(decoded.$galaxy.id, 2)
+                XCTAssertEqual(decoded.id, newPlanetId)
+                XCTAssertEqual(decoded.$galaxy.id, BaseGalaxySeeding.milkyWayId)
 
                 
                 let newPlanets = try app.db.query(Planet.self).all().wait()
@@ -107,7 +109,7 @@ final class CrudRoutePostResponseTests: XCTestCase {
                 
                 let newMars = newPlanets.first { $0.name == "Mars" }
                 
-                XCTAssertEqual(newMars?.id, 2)
+                XCTAssertEqual(newMars?.id, newPlanetId)
             }
         } catch {
             XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")
@@ -120,7 +122,9 @@ final class CrudRoutePostResponseTests: XCTestCase {
         }
         
         do {
-            let newPlanet = Planet(name: "Mars", galaxyID: 2)
+            let newGalaxyId = UUID()
+            let newPlanetId = UUID()
+            let newPlanet = Planet(id: newPlanetId, name: "Mars", galaxyID: newGalaxyId)
             
             try app.testable().test(.POST, "/planet", beforeRequest: { req in
                 try req.content.encode(newPlanet)
@@ -130,8 +134,8 @@ final class CrudRoutePostResponseTests: XCTestCase {
                 let decoded = try resp.content.decode(Planet.self)
                
                 XCTAssertEqual(decoded.name, "Mars")
-                XCTAssertEqual(decoded.id, 2)
-                XCTAssertEqual(decoded.$galaxy.id, 2)
+                XCTAssertEqual(decoded.id, newPlanetId)
+                XCTAssertEqual(decoded.$galaxy.id, newGalaxyId)
 
                
                 let newPlanets = try app.db.query(Planet.self).all().wait()
@@ -141,12 +145,12 @@ final class CrudRoutePostResponseTests: XCTestCase {
                
                 let newMars = newPlanets.first { $0.name == "Mars" }
                
-                XCTAssertEqual(newMars?.id, 2)
+                XCTAssertEqual(newMars?.id, newPlanetId)
             }
+
+            let newGalaxy = Galaxy(id: newGalaxyId, name: "Andromeda")
             
-            let newGalaxy = Galaxy(name: "Andromeda")
-            
-            try app.testable().test(.POST, "/planet/1/galaxy", beforeRequest: { req in
+            try app.testable().test(.POST, "/planet/\(ChildSeeding.earthId)/galaxy", beforeRequest: { req in
                 try req.content.encode(newGalaxy)
             }) { (resp) in
                 XCTAssertEqual(resp.status, .notFound)
@@ -164,9 +168,11 @@ final class CrudRoutePostResponseTests: XCTestCase {
         app.crud(register: Tag.self) { controller in
             controller.crud(siblings: \.$planets)
         }
+        let newGalaxyId = UUID()
         
         do {
-            let newPlanet = Planet(name: "Mars", galaxyID: 2)
+            let newPlanetId = UUID()
+            let newPlanet = Planet(id: newPlanetId, name: "Mars", galaxyID: newGalaxyId)
             
             try app.testable().test(.POST, "/planet", beforeRequest: { req in
                 try req.content.encode(newPlanet)
@@ -176,8 +182,8 @@ final class CrudRoutePostResponseTests: XCTestCase {
                 let decoded = try resp.content.decode(Planet.self)
                 
                 XCTAssertEqual(decoded.name, "Mars")
-                XCTAssertEqual(decoded.id, 2)
-                XCTAssertEqual(decoded.$galaxy.id, 2)
+                XCTAssertEqual(decoded.id, newPlanetId)
+                XCTAssertEqual(decoded.$galaxy.id, newGalaxyId)
 
                 let newPlanets = try app.db.query(Planet.self).all().wait()
                 
@@ -186,10 +192,11 @@ final class CrudRoutePostResponseTests: XCTestCase {
                 
                 let newMars = newPlanets.first { $0.name == "Mars" }
                 
-                XCTAssertEqual(newMars?.id, 2)
+                XCTAssertEqual(newMars?.id, newPlanetId)
             }
-            
-            let newTag = Tag(id: 2, name: "Red")
+
+            let newTagId = UUID()
+            let newTag = Tag(id: newTagId, name: "Red")
             
             try app.testable().test(.POST, "/tag", beforeRequest: { req in
                 try req.content.encode(newTag)
@@ -199,7 +206,7 @@ final class CrudRoutePostResponseTests: XCTestCase {
                 let decoded = try resp.content.decode(Tag.self)
                 
                 XCTAssertEqual(decoded.name, "Red")
-                XCTAssertEqual(decoded.id, 2)
+                XCTAssertEqual(decoded.id, newTagId)
                 
                 let newTags = try app.db.query(Tag.self).all().wait()
                 
@@ -208,12 +215,13 @@ final class CrudRoutePostResponseTests: XCTestCase {
                 
                 let newMarsTag = newTags.first { $0.name == "Red" }
                 
-                XCTAssertEqual(newMarsTag?.id, 2)
+                XCTAssertEqual(newMarsTag?.id, newTagId)
             }
+
+            let otherTagId = UUID()
+            let otherNewTag = Tag(id: otherTagId, name: "Uninhabitable")
             
-            let otherNewTag = Tag(id: 3, name: "Uninhabitable")
-            
-            try app.testable().test(.POST, "/planet/2/tag", beforeRequest: { req in
+            try app.testable().test(.POST, "/planet/\(newPlanetId)/tag", beforeRequest: { req in
                 try req.content.encode(otherNewTag)
             }) { (resp) in
                 XCTAssertEqual(resp.status, .ok)
@@ -221,7 +229,7 @@ final class CrudRoutePostResponseTests: XCTestCase {
                 let decoded = try resp.content.decode(Tag.self)
                 
                 XCTAssertEqual(decoded.name, "Uninhabitable")
-                XCTAssertEqual(decoded.id, 3)
+                XCTAssertEqual(decoded.id, otherTagId)
                 
                 let newTags = try app.db.query(Tag.self).all().wait()
                 
@@ -230,12 +238,13 @@ final class CrudRoutePostResponseTests: XCTestCase {
                 
                 let newMarsTag = newTags.first { $0.name == "Red" }
                 
-                XCTAssertEqual(newMarsTag?.id, 2)
+                XCTAssertEqual(newMarsTag?.id, newTagId)
             }
+
+            let otherPlanetId = UUID()
+            let otherNewPlanet = Planet(id: otherPlanetId, name: "Venus", galaxyID: newGalaxyId)
             
-            let otherNewPlanet = Planet(id: 3, name: "Venus", galaxyID: 2)
-            
-            try app.testable().test(.POST, "/tag/2/planet", beforeRequest: { req in
+            try app.testable().test(.POST, "/tag/\(newTagId)/planet", beforeRequest: { req in
                 try req.content.encode(otherNewPlanet)
             }) { (resp) in
                 XCTAssertEqual(resp.status, .ok)
@@ -243,7 +252,7 @@ final class CrudRoutePostResponseTests: XCTestCase {
                 let decoded = try resp.content.decode(Planet.self)
                 
                 XCTAssertEqual(decoded.name, "Venus")
-                XCTAssertEqual(decoded.id, 3)
+                XCTAssertEqual(decoded.id, otherPlanetId)
             }
         } catch {
             XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")

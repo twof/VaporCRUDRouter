@@ -6,6 +6,7 @@
 //
 
 import FluentKit
+import Foundation
 
 struct SiblingSeeding: Migration {
     func prepare(on database: Database) -> EventLoopFuture<Void> {
@@ -25,7 +26,8 @@ struct SiblingSeeding: Migration {
             ].flatten(on: database.eventLoop)
         }.flatten(on: database.eventLoop)
     }
-    
-    static var tags = [Tag(id: 1, name: "Life-Supporting")]
+
+    static let lifeSupportingId = UUID()
+    static var tags = [Tag(id: lifeSupportingId, name: "Life-Supporting")]
 }
 

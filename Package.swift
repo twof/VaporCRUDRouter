@@ -20,7 +20,8 @@ let package = Package(
         .product(name: "Fluent", package: "fluent"),
         .product(name: "FluentSQLiteDriver", package: "fluent-sqlite-driver")
       ]),
-        .testTarget(name: "CrudRouterTests", dependencies: [
+        .testTarget(name: "CrudRouterIntegrationTests", dependencies: [
+          .target(name: "CrudRouter"),
           .product(name: "FluentSQLiteDriver", package: "fluent-sqlite-driver"),
           .product(name: "XCTVapor", package: "vapor")
         ]),

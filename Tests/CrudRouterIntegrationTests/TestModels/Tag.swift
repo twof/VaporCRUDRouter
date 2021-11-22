@@ -4,8 +4,8 @@ import Vapor
 public final class Tag: Model, Content {
     public static let schema = "tags"
 
-    @ID(key: "id")
-    public var id: Int?
+    @ID(key: .id)
+    public var id: UUID?
 
     @Field(key: "name")
     public var name: String
@@ -15,7 +15,7 @@ public final class Tag: Model, Content {
 
     public init() { }
 
-    public init(id: Int? = nil, name: String) {
+    public init(id: UUID? = nil, name: String) {
         self.id = id
         self.name = name
     }
@@ -24,7 +24,7 @@ public final class Tag: Model, Content {
 public struct TagMigration: Migration {
     public func prepare(on database: Database) -> EventLoopFuture<Void> {
         return database.schema("tags")
-            .field("id", .int, .identifier(auto: true))
+            .field("id", .uuid, .identifier(auto: true))
             .field("name", .string, .required)
             .create()
     }

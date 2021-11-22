@@ -91,7 +91,7 @@ extension Crudable {
 
         let fullPath = baseIdPath + adjustedPath
 
-        let allMethods: Set<ChildrenRouterMethod> = Set([.read, .update])
+        let allMethods: Set<ChildrenRouterMethod> = Set([.create, .read, .readAll, .update, .delete])
         let controller: CrudChildrenController<ChildChildType, ChildType>
 
         switch either {

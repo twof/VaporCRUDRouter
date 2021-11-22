@@ -18,14 +18,14 @@ final class CrudRouteGetResponseTests: XCTestCase {
         app = Application(.testing)
         try! configure(app)
         
-        try! app.migrator.setupIfNeeded().wait()
-        try! app.migrator.prepareBatch().wait()
+        try! app.autoRevert().wait()
+        try! app.autoMigrate().wait()
     }
     
     override func tearDown() {
         super.tearDown()
         
-        try! app.migrator.revertAllBatches().wait()
+        app.shutdown()
     }
     
     func testGetBase() throws {
@@ -39,7 +39,7 @@ final class CrudRouteGetResponseTests: XCTestCase {
                 
                 XCTAssert(decoded.count == 1)
                 XCTAssert(decoded[0].name == "Milky Way")
-                XCTAssert(decoded[0].id == 1)
+                XCTAssert(decoded[0].id == BaseGalaxySeeding.milkyWayId)
             }
         } catch {
             XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")
@@ -59,17 +59,17 @@ final class CrudRouteGetResponseTests: XCTestCase {
                 
                 XCTAssert(decoded.count == 1)
                 XCTAssert(decoded[0].name == "Milky Way")
-                XCTAssert(decoded[0].id == 1)
+                XCTAssert(decoded[0].id == BaseGalaxySeeding.milkyWayId)
             }
             
-            try app.testable().test(.GET, "/galaxy/1/planet") { (resp) in
+            try app.testable().test(.GET, "/galaxy/\(BaseGalaxySeeding.milkyWayId)/planet") { (resp) in
                 XCTAssert(resp.status == .ok)
                 
                 let decoded = try resp.content.decode([Planet].self)
                 
                 XCTAssert(decoded.count == 1)
                 XCTAssert(decoded[0].name == "Earth")
-                XCTAssert(decoded[0].id == 1)
+                XCTAssert(decoded[0].id == ChildSeeding.earthId)
             }
         } catch {
             XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")
@@ -89,23 +89,23 @@ final class CrudRouteGetResponseTests: XCTestCase {
                 
                 XCTAssert(decoded.count == 1)
                 XCTAssert(decoded[0].name == "Earth")
-                XCTAssert(decoded[0].id == 1)
+                XCTAssert(decoded[0].id == ChildSeeding.earthId)
             }
             
-            try app.testable().test(.GET, "/planet/1/galaxy") { (resp) in
+            try app.testable().test(.GET, "/planet/\(ChildSeeding.earthId)/galaxy") { (resp) in
                 XCTAssert(resp.status == .ok)
                 
                 let decoded = try resp.content.decode(Galaxy.self)
                 
                 XCTAssert(decoded.name == "Milky Way")
-                XCTAssert(decoded.id == 1)
+                XCTAssert(decoded.id == BaseGalaxySeeding.milkyWayId)
             }
         } catch {
             XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")
         }
     }
     
-    func testGetSiblings() throws {
+    func testGetSiblings() async throws {
         app.crud(register: Planet.self) { (controller) in
             controller.crud(siblings: \.$tags)
         }
@@ -122,7 +122,7 @@ final class CrudRouteGetResponseTests: XCTestCase {
                 
                 XCTAssert(decoded.count == 1)
                 XCTAssert(decoded[0].name == "Earth")
-                XCTAssert(decoded[0].id == 1)
+                XCTAssert(decoded[0].id == ChildSeeding.earthId)
             }
             
             try app.testable().test(.GET, "/tag") { (resp) in
@@ -132,27 +132,27 @@ final class CrudRouteGetResponseTests: XCTestCase {
                 
                 XCTAssert(decoded.count == 1)
                 XCTAssert(decoded[0].name == "Life-Supporting")
-                XCTAssert(decoded[0].id == 1)
+                XCTAssert(decoded[0].id == SiblingSeeding.lifeSupportingId)
             }
             
-            try app.testable().test(.GET, "/planet/1/tag") { (resp) in
+            try app.testable().test(.GET, "/planet/\(ChildSeeding.earthId)/tag") { (resp) in
                 XCTAssert(resp.status == .ok)
                 
                 let decoded = try resp.content.decode([Tag].self)
                 
                 XCTAssert(decoded.count == 1)
                 XCTAssert(decoded[0].name == "Life-Supporting")
-                XCTAssert(decoded[0].id == 1)
+                XCTAssert(decoded[0].id == SiblingSeeding.lifeSupportingId)
             }
             
-            try app.testable().test(.GET, "/tag/1/planet") { (resp) in
+            try app.testable().test(.GET, "/tag/\(SiblingSeeding.lifeSupportingId)/planet") { (resp) in
                 XCTAssert(resp.status == .ok)
                 
                 let decoded = try resp.content.decode([Planet].self)
                 
                 XCTAssert(decoded.count == 1)
                 XCTAssert(decoded[0].name == "Earth")
-                XCTAssert(decoded[0].id == 1)
+                XCTAssert(decoded[0].id == ChildSeeding.earthId)
             }
         } catch {
             XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")

@@ -33,9 +33,14 @@ public extension CrudControllerProtocol {
     func update(_ req: Request) async throws -> ModelType {
         let id = try req.getId(modelType: ModelType.self)
         let model = try req.content.decode(ModelType.self)
-       
+
+        guard let existingModel = try await ModelType.find(id, on: req.db) else {
+            throw Abort(.notFound)
+        }
+
         let temp = model
-        temp.id = id
+        temp._$id.exists = true
+        temp.id = existingModel.id
         try await temp.update(on: req.db)
         return temp
     }

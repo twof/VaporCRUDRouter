@@ -28,7 +28,7 @@ public struct CrudChildrenController<ChildT: Model & Content, ParentT: Model & C
 extension CrudChildrenController: RouteCollection {
     public func boot(routes routesBuilder: RoutesBuilder) throws {
         let parentPath = self.path
-        let parentIdPath = self.path.appending(.parameter("\(ParentType.schema)ID"))
+        let parentIdPath = self.path.appending(.parameter("\(ChildType.schema)ID"))
 
         self.activeMethods.forEach {
             $0.register(

@@ -16,25 +16,11 @@ extension PathComponent {
     }
 }
 
-//func routes(_ router: RoutesBuilder) throws {
-//    router.crud(register: Galaxy.self) { controller in
-//        controller.crud(children: \.$planets)
-//    }
-//    router.crud(register: Planet.self) { controller in
-//        controller.crud(parent: \.$galaxy)
-//        controller.crud(siblings: \.$tags)
-//    }
-//    router.crud(register: Tag.self) { controller in
-//        controller.crud(siblings: \.$planets)
-//    }
-//}
-
 final class CrudRouteCreationTests: XCTestCase {
     func testBaseCrudRegistrationWithRouteName() throws {
         let app = Application()
         app.crud("planets", register: Planet.self)
 
-        XCTAssert(app.routes.all.isEmpty == false)
         XCTAssert(app.routes.all.count == 5)
         let paths = app.routes.all.map { [$0.method.rawValue] + $0.path.map { $0.stringComponent } }
 
@@ -49,7 +35,6 @@ final class CrudRouteCreationTests: XCTestCase {
         let app = Application()
         app.crud(register: Planet.self)
 
-        XCTAssert(app.routes.all.isEmpty == false)
         XCTAssert(app.routes.all.count == 5)
         let paths = app.routes.all.map { [$0.method.rawValue] + $0.path.map { $0.stringComponent } }
 
@@ -58,6 +43,30 @@ final class CrudRouteCreationTests: XCTestCase {
         XCTAssert(paths.contains { $0 == ["POST", "planet"] })
         XCTAssert(paths.contains { $0 == ["PUT", "planet", ":planetsID"] })
         XCTAssert(paths.contains { $0 == ["DELETE", "planet", ":planetsID"] })
+    }
+
+    func testBaseCrudRegistrationWithMethodsSelected() throws {
+        let app = Application()
+        app.crud(register: Planet.self, .only([.create, .delete]))
+
+        XCTAssert(app.routes.all.count == 2)
+        let paths = app.routes.all.map { [$0.method.rawValue] + $0.path.map { $0.stringComponent } }
+
+        XCTAssert(paths.contains { $0 == ["POST", "planet"] })
+        XCTAssert(paths.contains { $0 == ["DELETE", "planet", ":planetsID"] })
+    }
+
+    func testBaseCrudRegistrationWithMethodsExcluded() throws {
+        let app = Application()
+        app.crud(register: Planet.self, .except([.delete]))
+
+        XCTAssert(app.routes.all.count == 4)
+        let paths = app.routes.all.map { [$0.method.rawValue] + $0.path.map { $0.stringComponent } }
+
+        XCTAssert(paths.contains { $0 == ["GET", "planet"] })
+        XCTAssert(paths.contains { $0 == ["GET", "planet", ":planetsID"] })
+        XCTAssert(paths.contains { $0 == ["POST", "planet"] })
+        XCTAssert(paths.contains { $0 == ["PUT", "planet", ":planetsID"] })
     }
 
     static var allTests = [

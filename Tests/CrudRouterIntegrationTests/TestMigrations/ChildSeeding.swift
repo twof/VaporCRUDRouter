@@ -6,19 +6,23 @@
 //
 
 import FluentKit
+import Foundation
 
-struct BaseGalaxySeeding: Migration {
+struct ChildSeeding: Migration {
     func prepare(on database: Database) -> EventLoopFuture<Void> {
-        return BaseGalaxySeeding.galaxies.map {
-            $0.save(on: database).transform(to: ())
+        return ChildSeeding.planets.map { planet in
+            planet
+                .save(on: database)
+                .transform(to: ())
         }.flatten(on: database.eventLoop)
     }
     
     func revert(on database: Database) -> EventLoopFuture<Void> {
-        return BaseGalaxySeeding.galaxies.map {
+        return ChildSeeding.planets.map {
             $0.delete(on: database).transform(to: ())
         }.flatten(on: database.eventLoop)
     }
-    
-    static let galaxies = [Galaxy(name: "Milky Way")]
+
+    static let earthId = UUID()
+    static let planets = [Planet(id: earthId, name: "Earth", galaxyID: BaseGalaxySeeding.milkyWayId)]
 }

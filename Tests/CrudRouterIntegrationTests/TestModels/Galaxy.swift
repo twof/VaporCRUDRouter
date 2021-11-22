@@ -1,6 +1,7 @@
 import Vapor
 import FluentKit
 import CrudRouter
+import Foundation
 
 public final class Galaxy: Model, Content {
     public static let schema = "galaxies"
@@ -9,8 +10,8 @@ public final class Galaxy: Model, Content {
         return GalaxyMigration()
     }
     
-    @ID(key: "id")
-    public var id: Int?
+    @ID(key: .id)
+    public var id: UUID?
 
     @Field(key: "name")
     public var name: String
@@ -20,7 +21,7 @@ public final class Galaxy: Model, Content {
 
     public init() { }
 
-    public init(id: Int? = nil, name: String) {
+    public init(id: UUID? = nil, name: String) {
         self.id = id
         self.name = name
     }
@@ -30,7 +31,7 @@ struct GalaxyMigration: Migration {
     init() {}
     func prepare(on database: Database) -> EventLoopFuture<Void> {
         return database.schema("galaxies")
-            .field("id", .int, .identifier(auto: true))
+            .field("id", .uuid, .identifier(auto: true))
             .field("name", .string, .required)
             .create()
     }
