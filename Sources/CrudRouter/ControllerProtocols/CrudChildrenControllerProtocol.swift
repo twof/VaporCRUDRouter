@@ -64,6 +64,7 @@ public extension CrudChildrenControllerProtocol {
 
         let newChild = try req.content.decode(ChildType.self)
         let temp = newChild
+        temp._$id.exists = true
         temp.id = oldChild.id
         try await temp.update(on: req.db)
         return temp

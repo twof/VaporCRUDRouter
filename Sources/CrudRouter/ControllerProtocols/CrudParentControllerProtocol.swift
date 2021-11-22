@@ -23,13 +23,19 @@ public extension CrudParentControllerProtocol {
     }
 
     func update(_ req: Request) async throws -> ParentType {
-//        let childId = try req.getId(modelType: ChildType.self)
-        let parentId = try req.getId(modelType: ParentType.self)
+        let childId = try req.getId(modelType: ChildType.self)
         let newParent = try req.content.decode(ParentType.self)
         // TODO: make sure this actually updates the parent
 
+        guard let child = try await ChildType.find(childId, on: req.db) else {
+            throw Abort(.notFound)
+        }
+
+        let oldParent = try await child[keyPath: self.relation].get(on: req.db)
+
         let temp = newParent
-        temp.id = parentId
+        temp.id = oldParent.id
+        temp._$id.exists = true
         try await temp.update(on: req.db)
         return temp
     }

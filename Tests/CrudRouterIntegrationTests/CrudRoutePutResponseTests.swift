@@ -71,7 +71,7 @@ final class CrudRoutePutResponseTests: XCTestCase {
             let existingPlanet = Planet(name: "Earth 2", galaxyID: galaxyId)
 
             // TODO: I think this test is wrong and shouldn't work
-            try app.testable().test(.PUT, "/galaxy/\(galaxyId)/planet/", beforeRequest: { req in
+            try app.testable().test(.PUT, "/galaxy/\(galaxyId)/planet/\(planetId)", beforeRequest: { req in
                 try req.content.encode(existingPlanet)
             }) { (resp) in
                 XCTAssertEqual(resp.status, .ok)
@@ -85,12 +85,17 @@ final class CrudRoutePutResponseTests: XCTestCase {
                 
                 let newPlanets = try app.db.query(Planet.self).all().wait()
                 
-                XCTAssertEqual(newPlanets.count, 2)
+                XCTAssertEqual(newPlanets.count, 1)
                 XCTAssert(newPlanets.contains { $0.name == "Earth 2" })
                 
                 let newEarth = newPlanets.first { $0.name == "Earth 2" }
                 
                 XCTAssertEqual(newEarth?.id, planetId)
+                XCTAssertEqual(newEarth?.$galaxy.id, BaseGalaxySeeding.milkyWayId)
+
+                let parent = try Galaxy.find(BaseGalaxySeeding.milkyWayId, on: app.db).wait()
+                let doesContainPlanet = try parent?.$planets.get(on: app.db).wait().contains { $0.name == decoded.name }
+                XCTAssertEqual(doesContainPlanet, true)
             }
         } catch {
             XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")
@@ -103,39 +108,25 @@ final class CrudRoutePutResponseTests: XCTestCase {
         }
         
         do {
-            let planetId = UUID()
-            let existingPlanet = Planet(name: "Earth 2", galaxyID: planetId)
-            
-            try app.testable().test(.PUT, "/planet/\(planetId)", beforeRequest: { req in
-                try req.content.encode(existingPlanet)
-            }) { (resp) in
-                XCTAssertEqual(resp.status, .ok)
-               
-                let decoded = try resp.content.decode(Planet.self)
-               
-                XCTAssertEqual(decoded.name, "Earth 2")
-                XCTAssertEqual(decoded.id, planetId)
-                // TODO: This is probably broken
-                XCTAssertEqual(decoded.$galaxy.id, UUID())
-
-               
-                let newPlanets = try app.db.query(Planet.self).all().wait()
-               
-                XCTAssertEqual(newPlanets.count, 1)
-                XCTAssert(newPlanets.contains { $0.name == "Earth 2" })
-               
-                let newMars = newPlanets.first { $0.name == "Earth 2" }
-               
-                XCTAssertEqual(newMars?.id, planetId)
-            }
-
-            let galaxyId = UUID()
+            let planetId = ChildSeeding.earthId
+            let galaxyId = BaseGalaxySeeding.milkyWayId
             let existingGalaxy = Galaxy(id: galaxyId, name: "Milky Way 2")
             
             try app.testable().test(.PUT, "/planet/\(planetId)/galaxy", beforeRequest: { req in
                 try req.content.encode(existingGalaxy)
             }) { (resp) in
-                XCTAssertEqual(resp.status, .notFound)
+                XCTAssertEqual(resp.status, .ok)
+
+                let decoded = try resp.content.decode(Galaxy.self)
+
+                XCTAssertEqual(decoded.name, "Milky Way 2")
+                XCTAssertEqual(decoded.id, galaxyId)
+
+                let childPlanet = try Planet.find(planetId, on: app.db).wait()
+                let parentGalaxy = try childPlanet?.$galaxy.get(on: app.db).wait()
+
+                XCTAssertEqual(parentGalaxy?.name, "Milky Way 2")
+                XCTAssertEqual(parentGalaxy?.id, galaxyId)
             }
         } catch {
             XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")

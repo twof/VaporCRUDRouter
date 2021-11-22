@@ -73,11 +73,7 @@ public extension CrudSiblingsControllerProtocol {
     }
 }
 
-public extension CrudSiblingsControllerProtocol
-//    where
-//    ThroughType.Left == ParentType,
-//    ThroughType.Right == ChildType
-{
+public extension CrudSiblingsControllerProtocol {
     func create(_ req: Request) async throws -> ChildType {
         let parentId = try req.getId(modelType: ParentType.self)
 
@@ -108,39 +104,3 @@ public extension CrudSiblingsControllerProtocol
         return HTTPStatus.ok
     }
 }
-
-//public extension CrudSiblingsControllerProtocol where ThroughType.Right == ParentType,
-//ThroughType.Left == ChildType {
-//    func create(_ req: Request) throws -> EventLoopFuture<ChildType> {
-//        let parentId: ParentType.IDValue = try req.getId()
-//
-//        return try ParentType.find(parentId, on: req.db).unwrap(or: Abort(.notFound)).throwingFlatMap { parent -> EventLoopFuture<ChildType> in
-//
-//            return try req.content.decode(ChildType.self).flatMap { child in
-//                return child.create(on: req.db)
-//            }.flatMap { child in
-//                let relation = parent[keyPath: self.siblings]
-//                return relation.attach(child, on: req.db).transform(to: child)
-//            }
-//        }
-//    }
-//
-//    func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
-//        let parentId: ParentType.IDValue = try req.getId()
-//        let childId: ChildType.IDValue = try req.getId()
-//
-//        return try ParentType
-//            .find(parentId, on: req.db)
-//            .unwrap(or: Abort(.notFound))
-//            .throwingFlatMap { parent -> EventLoopFuture<HTTPStatus> in
-//                let siblingsRelation = parent[keyPath: self.siblings]
-//                return try siblingsRelation
-//                    .query(on: req.db)
-//                    .filter(\ChildType.fluentID == childId)
-//                    .first()
-//                    .unwrap(or: Abort(.notFound))
-//                    .delete(on: req.db)
-//                    .transform(to: HTTPStatus.ok)
-//        }
-//    }
-//}
