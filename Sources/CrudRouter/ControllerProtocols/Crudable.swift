@@ -1,6 +1,11 @@
 import Vapor
 import Fluent
 
+public protocol ControllerProtocol {
+    var path: [PathComponent] { get }
+    var router: RoutesBuilder { get }
+}
+
 public protocol Crudable: ControllerProtocol {
     associatedtype OriginType: Model, Content where OriginType.IDValue: LosslessStringConvertible
 
@@ -8,7 +13,7 @@ public protocol Crudable: ControllerProtocol {
         at path: PathComponent...,
         parent relation: KeyPath<OriginType, ParentProperty<OriginType, ParentType>>,
         _ either: OnlyExceptEither<ParentRouterMethod>,
-        relationConfiguration: ((CrudParentController<ParentType, OriginType>) -> Void)?
+        relationConfiguration: ((CrudParentController<OriginType, ParentType>) -> Void)?
     ) where
         ParentType: Model & Content,
         ParentType.IDValue: LosslessStringConvertible
@@ -17,7 +22,7 @@ public protocol Crudable: ControllerProtocol {
         at path: PathComponent...,
         children relation: KeyPath<OriginType, ChildrenProperty<OriginType, ChildType>>,
         _ either: OnlyExceptEither<ChildrenRouterMethod>,
-        relationConfiguration: ((CrudChildrenController<ChildType, OriginType>) -> Void)?
+        relationConfiguration: ((CrudChildrenController<OriginType, ChildType>) -> Void)?
     ) where
         ChildType: Model & Content
 
@@ -25,7 +30,7 @@ public protocol Crudable: ControllerProtocol {
         at path: PathComponent...,
         siblings relation: KeyPath<OriginType, SiblingsProperty<OriginType, SiblingType, ThroughType>>,
         _ either: OnlyExceptEither<ModifiableSiblingRouterMethod>,
-        relationConfiguration: ((CrudSiblingsController<SiblingType, OriginType, ThroughType>) -> Void)?
+        relationConfiguration: ((CrudSiblingsController<OriginType, SiblingType, ThroughType>) -> Void)?
     ) where
         SiblingType: Content,
         SiblingType.IDValue: LosslessStringConvertible,
@@ -37,7 +42,7 @@ extension Crudable {
         at path: PathComponent...,
         parent relation: KeyPath<OriginType, ParentProperty<OriginType, ParentType>>,
         _ either: OnlyExceptEither<ParentRouterMethod> = .only([.read, .update]),
-        relationConfiguration: ((CrudParentController<ParentType, OriginType>) -> Void)?=nil
+        relationConfiguration: ((CrudParentController<OriginType, ParentType>) -> Void)?=nil
     ) where
         ParentType: Model & Content,
         ParentType.IDValue: LosslessStringConvertible
@@ -47,9 +52,8 @@ extension Crudable {
 
         let fullPath = baseIdPath + adjustedPath
 
-
         let allMethods: Set<ParentRouterMethod> = Set([.read, .update])
-        let controller: CrudParentController<ParentType, OriginType>
+        let controller: CrudParentController<OriginType, ParentType>
 
         switch either {
         case .only(let methods):
@@ -63,28 +67,28 @@ extension Crudable {
         relationConfiguration?(controller)
     }
 
-    public func crud<ChildChildType>(
+    public func crud<ChildType>(
         at path: PathComponent...,
-        children relation: KeyPath<OriginType, ChildrenProperty<OriginType, ChildChildType>>,
+        children relation: KeyPath<OriginType, ChildrenProperty<OriginType, ChildType>>,
         _ either: OnlyExceptEither<ChildrenRouterMethod> = .only([.read, .readAll, .create, .update, .delete]),
-        relationConfiguration: ((CrudChildrenController<ChildChildType, OriginType>) -> Void)?=nil
+        relationConfiguration: ((CrudChildrenController<OriginType, ChildType>) -> Void)?=nil
     ) where
-        ChildChildType: Model & Content,
-        ChildChildType.IDValue: LosslessStringConvertible
+        ChildType: Model & Content,
+        ChildType.IDValue: LosslessStringConvertible
     {
         let baseIdPath = self.path.appending(.parameter("\(OriginType.schema)ID"))
-        let adjustedPath = path.adjustedPath(for: ChildChildType.self)
+        let adjustedPath = path.adjustedPath(for: ChildType.self)
 
         let fullPath = baseIdPath + adjustedPath
 
         let allMethods: Set<ChildrenRouterMethod> = Set([.create, .read, .readAll, .update, .delete])
-        let controller: CrudChildrenController<ChildChildType, OriginType>
+        let controller: CrudChildrenController<OriginType, ChildType>
 
         switch either {
         case .only(let methods):
-            controller = CrudChildrenController<ChildChildType, OriginType>(childrenRelation: relation, path: fullPath, router: self.router, activeMethods: Set(methods))
+            controller = CrudChildrenController<OriginType, ChildType>(childrenRelation: relation, path: fullPath, router: self.router, activeMethods: Set(methods))
         case .except(let methods):
-            controller = CrudChildrenController<ChildChildType, OriginType>(childrenRelation: relation, path: fullPath, router: self.router, activeMethods: allMethods.subtracting(Set(methods)))
+            controller = CrudChildrenController<OriginType, ChildType>(childrenRelation: relation, path: fullPath, router: self.router, activeMethods: allMethods.subtracting(Set(methods)))
         }
 
         do { try controller.boot(routes: self.router) } catch { fatalError("I have no reason to expect boot to throw") }
@@ -92,30 +96,30 @@ extension Crudable {
         relationConfiguration?(controller)
     }
 
-    public func crud<ChildChildType, ThroughType>(
+    public func crud<SiblingType, ThroughType>(
         at path: PathComponent...,
-        siblings relation: KeyPath<OriginType, SiblingsProperty<OriginType, ChildChildType, ThroughType>>,
+        siblings relation: KeyPath<OriginType, SiblingsProperty<OriginType, SiblingType, ThroughType>>,
         _ either: OnlyExceptEither<ModifiableSiblingRouterMethod> = .only([.read, .readAll, .create, .update, .delete]),
-        relationConfiguration: ((CrudSiblingsController<ChildChildType, OriginType, ThroughType>) -> Void)?=nil
+        relationConfiguration: ((CrudSiblingsController<OriginType, SiblingType, ThroughType>) -> Void)?=nil
     ) where
-        ChildChildType: Content,
-        ChildChildType.IDValue: LosslessStringConvertible,
+        SiblingType: Content,
+        SiblingType.IDValue: LosslessStringConvertible,
         ThroughType: Model
     {
         let baseIdPath = self.path.appending(.parameter("\(OriginType.schema)ID"))
-        let adjustedPath = path.adjustedPath(for: ChildChildType.self)
+        let adjustedPath = path.adjustedPath(for: SiblingType.self)
 
         let fullPath = baseIdPath + adjustedPath
 
         let allMethods: Set<ModifiableSiblingRouterMethod> = Set([.read, .readAll, .create, .update, .delete])
-        let controller: CrudSiblingsController<ChildChildType, OriginType, ThroughType>
+        let controller: CrudSiblingsController<OriginType, SiblingType, ThroughType>
 
         switch either {
         case .only(let methods):
-            controller = CrudSiblingsController<ChildChildType, OriginType, ThroughType>(siblingRelation: relation, path: fullPath, router:
+            controller = CrudSiblingsController<OriginType, SiblingType, ThroughType>(siblingRelation: relation, path: fullPath, router:
                 self.router, activeMethods: Set(methods))
         case .except(let methods):
-            controller = CrudSiblingsController<ChildChildType, OriginType, ThroughType>(siblingRelation: relation, path: fullPath, router: self.router, activeMethods: allMethods.subtracting(Set(methods)))
+            controller = CrudSiblingsController<OriginType, SiblingType, ThroughType>(siblingRelation: relation, path: fullPath, router: self.router, activeMethods: allMethods.subtracting(Set(methods)))
         }
 
          do { try controller.boot(routes: self.router) } catch { fatalError("I have no reason to expect boot to throw") }

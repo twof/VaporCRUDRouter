@@ -1,19 +1,20 @@
 import Vapor
 import Fluent
 
-public struct CrudChildrenController<ChildT: Model & Content, ParentT: Model & Content>: CrudChildrenControllerProtocol, Crudable where ChildT.IDValue: LosslessStringConvertible, ParentT.IDValue: LosslessStringConvertible {
-//    public var db: Database
+public struct CrudChildrenController<
+    OriginType: Model & Content,
+    ChildType: Model & Content
+>: CrudChildrenControllerProtocol, Crudable
+where ChildType.IDValue: LosslessStringConvertible, OriginType.IDValue: LosslessStringConvertible
+{
     public var router: RoutesBuilder
-    
-    public typealias ParentType = ParentT
-    public typealias OriginType = ChildT
 
-    public var children: KeyPath<ParentT, ChildrenProperty<ParentT, ChildT>>
+    public var children: KeyPath<OriginType, ChildrenProperty<OriginType, ChildType>>
     public let path: [PathComponent]
     let activeMethods: Set<ChildrenRouterMethod>
 
     init(
-        childrenRelation: KeyPath<ParentT, ChildrenProperty<ParentT, ChildT>>,
+        childrenRelation: KeyPath<OriginType, ChildrenProperty<OriginType, ChildType>>,
         path: [PathComponent],
         router: RoutesBuilder,
         activeMethods: Set<ChildrenRouterMethod>
@@ -27,15 +28,15 @@ public struct CrudChildrenController<ChildT: Model & Content, ParentT: Model & C
 
 extension CrudChildrenController: RouteCollection {
     public func boot(routes routesBuilder: RoutesBuilder) throws {
-        let parentPath = self.path
-        let parentIdPath = self.path.appending(.parameter("\(OriginType.schema)ID"))
+        let originPath = self.path
+        let originIdPath = self.path.appending(.parameter("\(ChildType.schema)ID"))
 
         self.activeMethods.forEach {
             $0.register(
                 router: router,
                 controller: self,
-                path: parentPath,
-                idPath: parentIdPath
+                path: originPath,
+                idPath: originIdPath
             )
         }
     }

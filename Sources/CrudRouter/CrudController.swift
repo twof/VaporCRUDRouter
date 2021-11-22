@@ -1,11 +1,6 @@
 import Vapor
 import Fluent
 
-public protocol ControllerProtocol {
-    var path: [PathComponent] { get }
-    var router: RoutesBuilder { get }
-}
-
 public struct CrudController<ModelT: Model & Content>: CrudControllerProtocol, Crudable where ModelT.IDValue: LosslessStringConvertible {
     public typealias OriginType = ModelT
     public typealias ModelType = ModelT
