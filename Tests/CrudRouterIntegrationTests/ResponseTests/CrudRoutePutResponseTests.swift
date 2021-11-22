@@ -134,102 +134,64 @@ final class CrudRoutePutResponseTests: XCTestCase {
     }
     
     func testPutSiblings() throws {
-        app.crud(register: Planet.self) { (controller) in
-            controller.crud(siblings: \.$tags)
+        app.crud(register: Planet.self, .only([])) { (controller) in
+            controller.crud(siblings: \.$tags, .only([.update]))
         }
         
-        app.crud(register: Tag.self) { controller in
-            controller.crud(siblings: \.$planets)
+        app.crud(register: Tag.self, .only([])) { controller in
+            controller.crud(siblings: \.$planets, .only([.update]))
         }
         
         do {
-            let planetId = UUID()
-            let existingPlanet = Planet(name: "Earth 2", galaxyID: planetId)
+            let planetId = ChildSeeding.earthId
+            let galaxyId = BaseGalaxySeeding.milkyWayId
+            let existingPlanet = Planet(id: planetId, name: "Earth 2", galaxyID: galaxyId)
+
+            let tagId = SiblingSeeding.lifeSupportingId
+            let existingTag = Tag(id: tagId, name: "Kind of Life Supporting")
             
-            try app.testable().test(.PUT, "/planet/\(planetId)", beforeRequest: { req in
+            try app.testable().test(.PUT, "/planet/\(planetId)/tag/\(tagId)", beforeRequest: { req in
+                try req.content.encode(existingTag)
+            }) { (resp) in
+                XCTAssertEqual(resp.status, .ok)
+
+                let decoded = try resp.content.decode(Tag.self)
+                
+                XCTAssertEqual(decoded.name, existingTag.name)
+                XCTAssertEqual(decoded.id, tagId)
+                
+                let allTags = try app.db.query(Tag.self).all().wait()
+                
+                XCTAssertEqual(allTags.count, 1)
+                XCTAssert(allTags.contains { $0.name == existingTag.name })
+
+                let earth = try Planet.find(planetId, on: app.db).wait()
+                let tags = try earth?.$tags.get(on: app.db).wait()
+                let tagsContainsUpdatedTag = tags?.contains { $0.name == existingTag.name }
+                
+                XCTAssertEqual(tagsContainsUpdatedTag, true)
+            }
+            
+            try app.testable().test(.PUT, "/tag/\(tagId)/planet/\(planetId)", beforeRequest: { req in
                 try req.content.encode(existingPlanet)
             }) { (resp) in
                 XCTAssertEqual(resp.status, .ok)
                 
                 let decoded = try resp.content.decode(Planet.self)
                 
-                XCTAssertEqual(decoded.name, "Earth 2")
+                XCTAssertEqual(decoded.name, existingPlanet.name)
                 XCTAssertEqual(decoded.id, planetId)
-                // TODO: Pretty sure this is wront
-                XCTAssertEqual(decoded.$galaxy.id, UUID())
 
-                let newPlanets = try app.db.query(Planet.self).all().wait()
-                
-                XCTAssertEqual(newPlanets.count, 1)
-                XCTAssert(newPlanets.contains { $0.name == "Earth 2" })
-                
-                let newMars = newPlanets.first { $0.name == "Earth 2" }
+                let allPlanets = try app.db.query(Planet.self).all().wait()
 
-                // TODO: Rename variable
-                XCTAssertEqual(newMars?.id, planetId)
-            }
+                XCTAssertEqual(allPlanets.count, 1)
+                XCTAssert(allPlanets.contains { $0.name == existingPlanet.name })
 
-            let tagId = UUID()
-            let existingTag = Tag(id: tagId, name: "Kind of Life Supporting")
-            
-            try app.testable().test(.PUT, "/tag/\(tagId)", beforeRequest: { req in
-                try req.content.encode(existingTag)
-            }) { (resp) in
-                XCTAssertEqual(resp.status, .ok)
-                
-                let decoded = try resp.content.decode(Tag.self)
-                
-                XCTAssertEqual(decoded.name, "Kind of Life Supporting")
-                XCTAssertEqual(decoded.id, tagId)
-                
-                let newTags = try app.db.query(Tag.self).all().wait()
-                
-                XCTAssertEqual(newTags.count, 1)
-                XCTAssert(newTags.contains { $0.name == "Kind of Life Supporting" })
+                let parentTag = try Tag.find(tagId, on: app.db).wait()
+                let planets = try parentTag?.$planets.get(on: app.db).wait()
+                let tagsContainsUpdatedTag = planets?.contains { $0.name == existingPlanet.name }
 
-                // TODO: rename variable
-                let newMarsTag = newTags.first { $0.name == "Kind of Life Supporting" }
-                
-                XCTAssertEqual(newMarsTag?.id, tagId)
-            }
-
-            let otherTagId = UUID()
-            let otherExistingTag = Tag(id: otherTagId, name: "Sort of Life Supporting")
-            
-            try app.testable().test(.PUT, "/planet/\(planetId)/tag/\(otherTagId)", beforeRequest: { req in
-                try req.content.encode(otherExistingTag)
-            }) { (resp) in
-                XCTAssertEqual(resp.status, .ok)
-
-                let decoded = try resp.content.decode(Tag.self)
-                
-                XCTAssertEqual(decoded.name, "Sort of Life Supporting")
-                XCTAssertEqual(decoded.id, otherTagId)
-                
-                let newTags = try app.db.query(Tag.self).all().wait()
-                
-                XCTAssertEqual(newTags.count, 1)
-                XCTAssert(newTags.contains { $0.name == "Sort of Life Supporting" })
-
-                // TODO: Rename variable
-                let newEarthTag = newTags.first { $0.name == "Sort of Life Supporting" }
-                
-                XCTAssertEqual(newEarthTag?.id, otherTagId)
-            }
-
-            let galaxyId = UUID()
-            let otherPlanetId = UUID()
-            let otherExistingPlanet = Planet(id: otherPlanetId, name: "Earth 3", galaxyID: galaxyId)
-            
-            try app.testable().test(.PUT, "/tag/\(tagId)/planet/\(otherPlanetId)", beforeRequest: { req in
-                try req.content.encode(otherExistingPlanet)
-            }) { (resp) in
-                XCTAssertEqual(resp.status, .ok)
-                
-                let decoded = try resp.content.decode(Planet.self)
-                
-                XCTAssertEqual(decoded.name, "Earth")
-                XCTAssertEqual(decoded.id, otherPlanetId)
+                XCTAssertEqual(tagsContainsUpdatedTag, true)
             }
         } catch {
             XCTFail("Probably couldn't decode to public galaxy: \(error.localizedDescription)")

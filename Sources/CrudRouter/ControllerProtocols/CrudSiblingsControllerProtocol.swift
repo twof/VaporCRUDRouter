@@ -57,17 +57,16 @@ public extension CrudSiblingsControllerProtocol {
         let parentId = try req.getId(modelType: ParentType.self)
         let childId = try req.getId(modelType: ChildType.self)
 
-        // TODO: Make sure this actually updates the siblings. Parent is never used.
         guard
-            let parent = try await ParentType.find(parentId, on: req.db)
+            let parent = try await ParentType.find(parentId, on: req.db),
+            let sibling = try await parent[keyPath: self.siblings].query(on: req.db).filter(\._$id == childId).first()
         else {
             throw Abort(.notFound)
         }
 
         let newChild = try req.content.decode(ChildType.self)
         let temp = newChild
-        temp.id = childId
-
+        temp._$id.exists = true
         try await temp.update(on: req.db)
         return temp
     }
