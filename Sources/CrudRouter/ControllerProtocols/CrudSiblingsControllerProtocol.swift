@@ -35,7 +35,7 @@ public extension CrudSiblingsControllerProtocol {
         // TODO: childId isn't being used. This probably isn't correct.
         guard
             let parent = try await ParentType.find(parentId, on: req.db),
-            let child = try await parent[keyPath: self.siblings].query(on: req.db).first()
+            let child = try await parent[keyPath: self.siblings].query(on: req.db).filter(\._$id == childId).first()
         else {
             throw Abort(.notFound)
         }
@@ -59,7 +59,7 @@ public extension CrudSiblingsControllerProtocol {
 
         guard
             let parent = try await ParentType.find(parentId, on: req.db),
-            let sibling = try await parent[keyPath: self.siblings].query(on: req.db).filter(\._$id == childId).first()
+            try await parent[keyPath: self.siblings].query(on: req.db).filter(\._$id == childId).first() != nil
         else {
             throw Abort(.notFound)
         }
@@ -67,6 +67,7 @@ public extension CrudSiblingsControllerProtocol {
         let newChild = try req.content.decode(ChildType.self)
         let temp = newChild
         temp._$id.exists = true
+        temp.id = childId
         try await temp.update(on: req.db)
         return temp
     }

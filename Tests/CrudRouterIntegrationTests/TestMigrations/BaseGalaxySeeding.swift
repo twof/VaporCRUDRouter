@@ -22,5 +22,7 @@ struct BaseGalaxySeeding: Migration {
     }
 
     static let milkyWayId = UUID()
-    static let galaxies = [Galaxy(id: milkyWayId, name: "Milky Way")]
+    static var galaxies: [Galaxy] {
+        [Galaxy(id: milkyWayId, name: "Milky Way")]
+    }
 }

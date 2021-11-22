@@ -19,9 +19,11 @@ public protocol CrudChildrenControllerProtocol {
 public extension CrudChildrenControllerProtocol {
     func index(_ req: Request) async throws -> ChildType {
         let parentId = try req.getId(modelType: ParentType.self)
+        let childId = try req.getId(modelType: ChildType.self)
+
         guard
             let parent = try await ParentType.find(parentId, on: req.db),
-            let child = try await parent[keyPath: self.children].query(on: req.db).first()
+            let child = try await parent[keyPath: self.children].query(on: req.db).filter(\._$id == childId).first()
         else {
             throw Abort(.notFound)
         }
@@ -54,10 +56,11 @@ public extension CrudChildrenControllerProtocol {
 
     func update(_ req: Request) async throws -> ChildType {
         let parentId = try req.getId(modelType: ParentType.self)
+        let childId = try req.getId(modelType: ChildType.self)
 
         guard
             let parent = try await ParentType.find(parentId, on: req.db),
-            let oldChild = try await parent[keyPath: self.children].query(on: req.db).first()
+            try await parent[keyPath: self.children].query(on: req.db).filter(\._$id == childId).first() != nil
         else {
             throw Abort(.notFound)
         }
@@ -65,16 +68,18 @@ public extension CrudChildrenControllerProtocol {
         let newChild = try req.content.decode(ChildType.self)
         let temp = newChild
         temp._$id.exists = true
-        temp.id = oldChild.id
+        temp.id = childId
         try await temp.update(on: req.db)
         return temp
     }
 
     func delete(_ req: Request) async throws -> HTTPStatus {
         let parentId = try req.getId(modelType: ParentType.self)
+        let childId = try req.getId(modelType: ChildType.self)
+
         guard
             let parent = try await ParentType.find(parentId, on: req.db),
-            let child = try await parent[keyPath: self.children].query(on: req.db).first()
+            let child = try await parent[keyPath: self.children].query(on: req.db).filter(\._$id == childId).first()
         else {
             throw Abort(.notFound)
         }

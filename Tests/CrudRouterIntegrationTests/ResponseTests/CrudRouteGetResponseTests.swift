@@ -56,6 +56,9 @@ final class CrudRouteGetResponseTests: XCTestCase {
                 XCTAssert(resp.status == .ok)
                 
                 let decoded = try resp.content.decode([Galaxy].self)
+                let allGalaxies = try app.db.query(Galaxy.self).all().wait()
+                print(allGalaxies)
+                print()
                 
                 XCTAssert(decoded.count == 1)
                 XCTAssert(decoded[0].name == "Milky Way")

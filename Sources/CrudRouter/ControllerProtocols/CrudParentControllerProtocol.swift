@@ -25,7 +25,6 @@ public extension CrudParentControllerProtocol {
     func update(_ req: Request) async throws -> ParentType {
         let childId = try req.getId(modelType: ChildType.self)
         let newParent = try req.content.decode(ParentType.self)
-        // TODO: make sure this actually updates the parent
 
         guard let child = try await ChildType.find(childId, on: req.db) else {
             throw Abort(.notFound)

@@ -28,6 +28,8 @@ struct SiblingSeeding: Migration {
     }
 
     static let lifeSupportingId = UUID()
-    static var tags = [Tag(id: lifeSupportingId, name: "Life-Supporting")]
+    static var tags: [Tag] {
+        [Tag(id: lifeSupportingId, name: "Life-Supporting")]
+    }
 }
 

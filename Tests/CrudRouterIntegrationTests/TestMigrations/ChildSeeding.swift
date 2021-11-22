@@ -24,5 +24,7 @@ struct ChildSeeding: Migration {
     }
 
     static let earthId = UUID()
-    static let planets = [Planet(id: earthId, name: "Earth", galaxyID: BaseGalaxySeeding.milkyWayId)]
+    static var planets: [Planet] {
+        [Planet(id: earthId, name: "Earth", galaxyID: BaseGalaxySeeding.milkyWayId)]
+    }
 }
