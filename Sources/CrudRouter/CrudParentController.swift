@@ -1,11 +1,13 @@
 import Vapor
 import Fluent
 
-public struct CrudParentController<ChildT: Model & Content, ParentT: Model & Content>: CrudParentControllerProtocol, Crudable where ChildT.IDValue: LosslessStringConvertible, ParentT.IDValue: LosslessStringConvertible {
-    
-    public typealias ParentType = ParentT
-    public typealias OriginType = ChildT
-
+public struct CrudParentController<
+    OriginType: Model & Content,
+    ParentType: Model & Content
+>: CrudParentControllerProtocol, Crudable where
+    OriginType.IDValue: LosslessStringConvertible,
+    ParentType.IDValue: LosslessStringConvertible
+{
     public let relation: KeyPath<OriginType, ParentProperty<OriginType, ParentType>>
     public let path: [PathComponent]
     public let router: RoutesBuilder

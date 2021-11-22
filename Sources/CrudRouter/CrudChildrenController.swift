@@ -4,8 +4,9 @@ import Fluent
 public struct CrudChildrenController<
     OriginType: Model & Content,
     ChildType: Model & Content
->: CrudChildrenControllerProtocol, Crudable
-where ChildType.IDValue: LosslessStringConvertible, OriginType.IDValue: LosslessStringConvertible
+>: CrudChildrenControllerProtocol, Crudable where
+    ChildType.IDValue: LosslessStringConvertible,
+    OriginType.IDValue: LosslessStringConvertible
 {
     public var router: RoutesBuilder
 

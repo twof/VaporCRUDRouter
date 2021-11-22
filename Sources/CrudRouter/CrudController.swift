@@ -1,7 +1,9 @@
 import Vapor
 import Fluent
 
-public struct CrudController<ModelT: Model & Content>: CrudControllerProtocol, Crudable where ModelT.IDValue: LosslessStringConvertible {
+public struct CrudController<
+    ModelT: Model & Content
+>: CrudControllerProtocol, Crudable where ModelT.IDValue: LosslessStringConvertible {
     public typealias OriginType = ModelT
     public typealias ModelType = ModelT
 
