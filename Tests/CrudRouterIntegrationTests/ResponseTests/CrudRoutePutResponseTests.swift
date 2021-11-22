@@ -1,10 +1,3 @@
-//
-//  CrudRoutePostResponseTests.swift
-//  AsyncHTTPClient
-//
-//  Created by fnord on 1/4/20.
-//
-
 import FluentSQLiteDriver
 import Fluent
 import XCTVapor

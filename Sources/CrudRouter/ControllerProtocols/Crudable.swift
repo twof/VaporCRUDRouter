@@ -8,7 +8,7 @@ public protocol Crudable: ControllerProtocol {
         at path: PathComponent...,
         parent relation: KeyPath<OriginType, ParentProperty<OriginType, ParentType>>,
         _ either: OnlyExceptEither<ParentRouterMethod>,
-        relationConfiguration: ((CrudParentController<OriginType, ParentType>) -> Void)?
+        relationConfiguration: ((CrudParentController<ParentType, OriginType>) -> Void)?
     ) where
         ParentType: Model & Content,
         ParentType.IDValue: LosslessStringConvertible
@@ -37,7 +37,7 @@ extension Crudable {
         at path: PathComponent...,
         parent relation: KeyPath<OriginType, ParentProperty<OriginType, ParentType>>,
         _ either: OnlyExceptEither<ParentRouterMethod> = .only([.read, .update]),
-        relationConfiguration: ((CrudParentController<OriginType, ParentType>) -> Void)?=nil
+        relationConfiguration: ((CrudParentController<ParentType, OriginType>) -> Void)?=nil
     ) where
         ParentType: Model & Content,
         ParentType.IDValue: LosslessStringConvertible
@@ -49,7 +49,7 @@ extension Crudable {
 
 
         let allMethods: Set<ParentRouterMethod> = Set([.read, .update])
-        let controller: CrudParentController<OriginType, ParentType>
+        let controller: CrudParentController<ParentType, OriginType>
 
         switch either {
         case .only(let methods):

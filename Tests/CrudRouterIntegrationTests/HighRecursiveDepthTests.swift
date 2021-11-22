@@ -24,5 +24,10 @@ class HighRecursiveDepthTests: XCTestCase {
             }
         }
 
+        app.crud(register: Planet.self) { router in
+            router.crud(parent: \.$galaxy) { parentRouter in
+                parentRouter.crud(children: \.$planets)
+            }
+        }
     }
 }

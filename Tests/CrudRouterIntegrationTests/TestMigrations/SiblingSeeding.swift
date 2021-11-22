@@ -1,10 +1,3 @@
-//
-//  SiblingSeeding.swift
-//  AsyncHTTPClient
-//
-//  Created by fnord on 12/29/19.
-//
-
 import FluentKit
 import Foundation
 

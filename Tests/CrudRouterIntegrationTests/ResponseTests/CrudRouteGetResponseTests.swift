@@ -1,10 +1,3 @@
-//
-//  File.swift
-//  
-//
-//  Created by fnord on 12/29/19.
-//
-
 import FluentSQLiteDriver
 import Fluent
 import XCTVapor
