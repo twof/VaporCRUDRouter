@@ -32,7 +32,6 @@ public extension CrudSiblingsControllerProtocol {
         let parentId = try req.getId(modelType: ParentType.self)
         let childId = try req.getId(modelType: ChildType.self)
 
-        // TODO: childId isn't being used. This probably isn't correct.
         guard
             let parent = try await ParentType.find(parentId, on: req.db),
             let child = try await parent[keyPath: self.siblings].query(on: req.db).filter(\._$id == childId).first()

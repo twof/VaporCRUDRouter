@@ -6,7 +6,7 @@ public struct CrudChildrenController<ChildT: Model & Content, ParentT: Model & C
     public var router: RoutesBuilder
     
     public typealias ParentType = ParentT
-    public typealias ChildType = ChildT
+    public typealias OriginType = ChildT
 
     public var children: KeyPath<ParentT, ChildrenProperty<ParentT, ChildT>>
     public let path: [PathComponent]
@@ -28,7 +28,7 @@ public struct CrudChildrenController<ChildT: Model & Content, ParentT: Model & C
 extension CrudChildrenController: RouteCollection {
     public func boot(routes routesBuilder: RoutesBuilder) throws {
         let parentPath = self.path
-        let parentIdPath = self.path.appending(.parameter("\(ChildType.schema)ID"))
+        let parentIdPath = self.path.appending(.parameter("\(OriginType.schema)ID"))
 
         self.activeMethods.forEach {
             $0.register(

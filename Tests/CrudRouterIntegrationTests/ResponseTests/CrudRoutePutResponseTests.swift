@@ -70,7 +70,6 @@ final class CrudRoutePutResponseTests: XCTestCase {
             let galaxyId = BaseGalaxySeeding.milkyWayId
             let existingPlanet = Planet(name: "Earth 2", galaxyID: galaxyId)
 
-            // TODO: I think this test is wrong and shouldn't work
             try app.testable().test(.PUT, "/galaxy/\(galaxyId)/planet/\(planetId)", beforeRequest: { req in
                 try req.content.encode(existingPlanet)
             }) { (resp) in

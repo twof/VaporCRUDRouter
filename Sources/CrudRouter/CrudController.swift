@@ -7,7 +7,7 @@ public protocol ControllerProtocol {
 }
 
 public struct CrudController<ModelT: Model & Content>: CrudControllerProtocol, Crudable where ModelT.IDValue: LosslessStringConvertible {
-    public typealias ChildType = ModelT
+    public typealias OriginType = ModelT
     public typealias ModelType = ModelT
 
     public let path: [PathComponent]

@@ -10,7 +10,7 @@ public struct CrudSiblingsController<
     ParentType.IDValue: LosslessStringConvertible
 {
     public typealias ParentType = ParentType
-    public typealias ChildType = ChildType
+    public typealias OriginType = ChildType
     public typealias ThroughType = ThroughType
     
     public var siblings: KeyPath<ParentType, SiblingsProperty<ParentType, ChildType, ThroughType>>
