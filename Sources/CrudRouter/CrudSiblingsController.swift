@@ -33,52 +33,18 @@ public struct CrudSiblingsController<
 
 extension CrudSiblingsController: RouteCollection {}
 
-//public extension CrudSiblingsController where
-//    ThroughType.Right == ParentType,
-//    ThroughType.Left == ChildType
-//{
-//    func boot(routes router: RoutesBuilder) throws {
-//        let parentPath = self.path
-//        let parentIdPath = self.path.appending(.parameter("\(ParentType.schema)ID"))
-//
-//        self.activeMethods.forEach {
-//            $0.register(
-//                router: router,
-//                controller: self,
-//                path: parentPath,
-//                idPath: parentIdPath
-//            )
-//        }
-//    }
-//}
-//
-public extension CrudSiblingsController
-//    where
-//    ThroughType.Left == ParentType,
-//    ThroughType.Right == ChildType
-{
+public extension CrudSiblingsController {
     func boot(routes router: RoutesBuilder) throws {
-        let parentPath = self.path
-        let parentIdPath = self.path.appending(.parameter("\(ParentType.schema)ID"))
+        let childPath = self.path
+        let childIdPath = self.path.appending(.parameter("\(ChildType.schema)ID"))
 
         self.activeMethods.forEach {
             $0.register(
                 router: router,
                 controller: self,
-                path: parentPath,
-                idPath: parentIdPath
+                path: childPath,
+                idPath: childIdPath
             )
         }
     }
 }
-
-//public extension CrudSiblingsController {
-//    func boot(routes router: RoutesBuilder) throws {
-//        let parentPath = self.path
-//        let parentIdPath = self.path.appending(.parameter("\(ParentType.schema)ID"))
-//
-//        router.on(.GET, parentIdPath, use: self.index)
-//        router.on(.GET, parentPath, use: self.indexAll)
-//        router.put(parentIdPath, use: self.update)
-//    }
-//}

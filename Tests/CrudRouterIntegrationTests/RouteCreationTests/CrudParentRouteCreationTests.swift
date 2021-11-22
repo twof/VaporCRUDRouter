@@ -4,7 +4,7 @@ import Vapor
 import XCTVapor
 
 final class CrudParentRouteCreationTests: XCTestCase {
-    func testCrudRegistrationWithDefaultRoute() throws {
+    func testRegistrationWithDefaultRoute() throws {
         let app = Application()
         app.crud(register: Planet.self) { router in
             router.crud(parent: \.$galaxy)
@@ -23,7 +23,7 @@ final class CrudParentRouteCreationTests: XCTestCase {
         XCTAssert(paths.contains { $0 == ["PUT", "planet", ":planetsID", "galaxy"] })
     }
 
-    func testChildrenCrudRegistrationWithMethodsSelected() throws {
+    func testRegistrationWithMethodsSelected() throws {
         let app = Application()
         app.crud(register: Planet.self) { router in
             router.crud(parent: \.$galaxy, .only([.read]))
@@ -41,7 +41,7 @@ final class CrudParentRouteCreationTests: XCTestCase {
         XCTAssert(paths.contains { $0 == ["GET", "planet", ":planetsID", "galaxy"] })
     }
 
-    func testChildrenCrudRegistrationWithMethodsExcluded() throws {
+    func testRegistrationWithMethodsExcluded() throws {
         let app = Application()
         app.crud(register: Planet.self) { router in
             router.crud(parent: \.$galaxy, .except([.read]))

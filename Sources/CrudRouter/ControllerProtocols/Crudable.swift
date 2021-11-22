@@ -30,18 +30,6 @@ public protocol Crudable: ControllerProtocol {
         ChildChildType: Content,
         ChildChildType.IDValue: LosslessStringConvertible,
         ThroughType: Model
-
-//    func crud<ChildChildType, ThroughType>(
-//        at path: PathComponent...,
-//        siblings relation: KeyPath<ChildType, Siblings<ChildType, ChildChildType, ThroughType>>,
-//        _ either: OnlyExceptEither<ModifiableSiblingRouterMethod>,
-//        relationConfiguration: ((CrudSiblingsController<ChildChildType, ChildType, ThroughType>) -> Void)?
-//    ) where
-//        ChildChildType: Content,
-//        ChildChildType.IDValue: LosslessStringConvertible,
-//        ThroughType: Model,
-//        ThroughType.Right == ChildType,
-//        ThroughType.Left == ChildChildType
 }
 
 extension Crudable {
@@ -52,7 +40,6 @@ extension Crudable {
         relationConfiguration: ((CrudParentController<ChildType, ParentType>) -> Void)?=nil
     ) where
         ParentType: Model & Content,
-//        ChildType.Database == ParentType.Database,
         ParentType.IDValue: LosslessStringConvertible
     {
         let baseIdPath = self.path.appending(.parameter("\(ChildType.schema)ID"))
@@ -83,7 +70,6 @@ extension Crudable {
         relationConfiguration: ((CrudChildrenController<ChildChildType, ChildType>) -> Void)?=nil
     ) where
         ChildChildType: Model & Content,
-//        ChildType.Database == ChildChildType.Database,
         ChildChildType.IDValue: LosslessStringConvertible
     {
         let baseIdPath = self.path.appending(.parameter("\(ChildType.schema)ID"))
@@ -115,8 +101,6 @@ extension Crudable {
         ChildChildType: Content,
         ChildChildType.IDValue: LosslessStringConvertible,
         ThroughType: Model
-//        ThroughType.Left == ChildType,
-//        ThroughType.Right == ChildChildType
     {
         let baseIdPath = self.path.appending(.parameter("\(ChildType.schema)ID"))
         let adjustedPath = path.adjustedPath(for: ChildChildType.self)
@@ -138,36 +122,4 @@ extension Crudable {
 
         relationConfiguration?(controller)
     }
-
-//    public func crud<ChildChildType, ThroughType>(
-//        at path: PathComponent...,
-//        siblings relation: KeyPath<ChildType, Siblings<ChildType, ChildChildType, ThroughType>>,
-//        _ either: OnlyExceptEither<ModifiableSiblingRouterMethod> = .only([.read, .readAll, .create, .update, .delete]),
-//        relationConfiguration: ((CrudSiblingsController<ChildChildType, ChildType, ThroughType>) -> Void)?=nil
-//    ) where
-//        ChildChildType: Content,
-//        ChildChildType.IDValue: LosslessStringConvertible,
-//        ThroughType: Model
-////        ThroughType.Right == ChildType,
-////        ThroughType.Left == ChildChildType
-//    {
-//        let baseIdPath = self.path.appending(.parameter("\(ChildType.schema)ID"))
-//        let adjustedPath = path.adjustedPath(for: ChildChildType.self)
-//
-//        let fullPath = baseIdPath + adjustedPath
-//
-//        let allMethods: Set<ModifiableSiblingRouterMethod> = Set([.read, .readAll, .create, .update, .delete])
-//        let controller: CrudSiblingsController<ChildChildType, ChildType, ThroughType>
-//
-//        switch either {
-//        case .only(let methods):
-//            controller = CrudSiblingsController<ChildChildType, ChildType, ThroughType>(siblingRelation: relation, path: fullPath, router: self.router, activeMethods: Set(methods))
-//        case .except(let methods):
-//            controller = CrudSiblingsController<ChildChildType, ChildType, ThroughType>(siblingRelation: relation, path: fullPath, router: self.router, activeMethods: allMethods.subtracting(Set(methods)))
-//        }
-//
-//        do { try controller.boot(routes: self.router) } catch { fatalError("I have no reason to expect boot to throw") }
-//
-//        relationConfiguration?(controller)
-//    }
 }
