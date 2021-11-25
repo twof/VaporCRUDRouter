@@ -17,16 +17,13 @@ class HighRecursiveDepthTests: XCTestCase {
         let app = Application()
         app.crud(register: Galaxy.self) { router in
             router.crud(children: \.$planets) { childRouter in
-                childRouter.crud(parent: \.$galaxy) { parentRouter in
-                    // TODO: This doesn't compile yet
-                    print()
-                }
+                childRouter.crud(siblings: \Planet.$tags)
             }
         }
 
-        app.crud(register: Planet.self) { router in
-            router.crud(parent: \.$galaxy) { parentRouter in
-                parentRouter.crud(children: \.$planets)
+        app.crud(register: Planet.self) { (router: CrudController<Planet>) in
+            router.crud(parent: \Planet.$galaxy) { (parentRouter: CrudParentController<CrudController<Planet>.OriginType, Galaxy>) in
+//                parentRouter.crud(children: \Galaxy.$planets)
             }
         }
     }

@@ -8,6 +8,8 @@ public struct CrudChildrenController<
     ChildType.IDValue: LosslessStringConvertible,
     OriginType.IDValue: LosslessStringConvertible
 {
+    public typealias TargetType = ChildType
+
     public var router: RoutesBuilder
 
     public var children: KeyPath<OriginType, ChildrenProperty<OriginType, ChildType>>

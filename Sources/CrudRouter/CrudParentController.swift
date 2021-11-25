@@ -8,6 +8,8 @@ public struct CrudParentController<
     OriginType.IDValue: LosslessStringConvertible,
     ParentType.IDValue: LosslessStringConvertible
 {
+    public typealias TargetType = ParentType
+
     public let relation: KeyPath<OriginType, ParentProperty<OriginType, ParentType>>
     public let path: [PathComponent]
     public let router: RoutesBuilder
