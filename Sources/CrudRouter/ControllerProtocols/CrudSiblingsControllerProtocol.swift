@@ -1,21 +1,7 @@
 import Vapor
-import Fluent
 import FluentKit
 
-extension EventLoopFuture {
-    func throwingFlatMap<NewValue>(file: StaticString = #file, line: UInt = #line, _ callback: @escaping ((Value) throws -> EventLoopFuture<NewValue>)) rethrows -> EventLoopFuture<NewValue> {
-        return self.flatMap(file: file, line: line) { (value: Value) -> EventLoopFuture<NewValue> in
-            do {
-                return try callback(value)
-            } catch {
-                return self.eventLoop.makeFailedFuture(error)
-            }
-        }
-    }
-}
-
-// TODO: Do these proocols actually need to be public?
-public protocol CrudSiblingsControllerProtocol {
+protocol CrudSiblingsControllerProtocol {
     associatedtype ParentType: Model & Content where ParentType.IDValue: LosslessStringConvertible
     associatedtype ChildType: Model & Content where ChildType.IDValue: LosslessStringConvertible
     associatedtype ThroughType: Model
@@ -27,7 +13,7 @@ public protocol CrudSiblingsControllerProtocol {
     func update(_ req: Request) async throws -> ChildType
 }
 
-public extension CrudSiblingsControllerProtocol {
+extension CrudSiblingsControllerProtocol {
     func index(_ req: Request) async throws -> ChildType {
         let parentId = try req.getId(modelType: ParentType.self)
         let childId = try req.getId(modelType: ChildType.self)
@@ -70,9 +56,7 @@ public extension CrudSiblingsControllerProtocol {
         try await temp.update(on: req.db)
         return temp
     }
-}
 
-public extension CrudSiblingsControllerProtocol {
     func create(_ req: Request) async throws -> ChildType {
         let parentId = try req.getId(modelType: ParentType.self)
 

@@ -1,9 +1,7 @@
 import Vapor
 import FluentKit
-import Fluent
-import NIOExtras
 
-public protocol CrudChildrenControllerProtocol {
+protocol CrudChildrenControllerProtocol {
     associatedtype ParentType: Model & Content where ParentType.IDValue: LosslessStringConvertible
     associatedtype ChildType: Model & Content where ChildType.IDValue: LosslessStringConvertible
 
@@ -16,7 +14,7 @@ public protocol CrudChildrenControllerProtocol {
     func delete(_ req: Request) async throws -> HTTPStatus
 }
 
-public extension CrudChildrenControllerProtocol {
+extension CrudChildrenControllerProtocol {
     func index(_ req: Request) async throws -> ChildType {
         let parentId = try req.getId(modelType: ParentType.self)
         let childId = try req.getId(modelType: ChildType.self)

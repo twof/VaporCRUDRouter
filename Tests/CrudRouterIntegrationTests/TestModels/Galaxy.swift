@@ -1,27 +1,25 @@
 import Vapor
 import FluentKit
-import CrudRouter
-import Foundation
 
-public final class Galaxy: Model, Content {
-    public static let schema = "galaxies"
+final class Galaxy: Model, Content {
+    static let schema = "galaxies"
 
-    public static var migration: Migration {
+    static var migration: Migration {
         return GalaxyMigration()
     }
     
     @ID(key: .id)
-    public var id: UUID?
+    var id: UUID?
 
     @Field(key: "name")
-    public var name: String
+    var name: String
 
     @Children(for: \.$galaxy)
-    public var planets: [Planet]
+    var planets: [Planet]
 
-    public init() { }
+    init() { }
 
-    public init(id: UUID? = nil, name: String) {
+    init(id: UUID? = nil, name: String) {
         self.id = id
         self.name = name
     }

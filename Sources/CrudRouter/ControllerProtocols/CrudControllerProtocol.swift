@@ -1,7 +1,7 @@
 import Vapor
 import Fluent
 
-public protocol CrudControllerProtocol {
+protocol CrudControllerProtocol {
     associatedtype ModelType: Model, Content where ModelType.IDValue: LosslessStringConvertible
     
     func indexAll(_ req: Request) async throws -> [ModelType]
@@ -11,7 +11,7 @@ public protocol CrudControllerProtocol {
     func delete(_ req: Request) async throws -> HTTPStatus
 }
 
-public extension CrudControllerProtocol {
+extension CrudControllerProtocol {
     func indexAll(_ req: Request) async throws -> [ModelType] {
         return try await ModelType.query(on: req.db).all()
     }

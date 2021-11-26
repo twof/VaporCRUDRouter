@@ -1,4 +1,4 @@
-import FluentSQLiteDriver
+import FluentKit
 import Foundation
 
 final class PlanetTag: Model {

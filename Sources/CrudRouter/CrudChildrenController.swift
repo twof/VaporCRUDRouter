@@ -12,7 +12,7 @@ public struct CrudChildrenController<
 
     public var router: RoutesBuilder
 
-    public var children: KeyPath<OriginType, ChildrenProperty<OriginType, ChildType>>
+    var children: KeyPath<OriginType, ChildrenProperty<OriginType, ChildType>>
     public let path: [PathComponent]
     let activeMethods: Set<ChildrenRouterMethod>
 

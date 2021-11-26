@@ -1,32 +1,32 @@
-import FluentSQLiteDriver
+import FluentKit
 import Vapor
 
-public final class Planet: Model, Content {
-    public static let schema = "planets"
+final class Planet: Model, Content {
+    static let schema = "planets"
 
     @ID(key: .id)
-    public var id: UUID?
+    var id: UUID?
 
     @Field(key: "name")
-    public var name: String
+    var name: String
 
     @Parent(key: "galaxy_id")
-    public var galaxy: Galaxy
+    var galaxy: Galaxy
 
     @Siblings(through: PlanetTag.self, from: \.$planet, to: \.$tag)
-    public var tags: [Tag]
+    var tags: [Tag]
 
-    public init() { }
+    init() { }
 
-    public init(id: UUID? = nil, name: String, galaxyID: Galaxy.IDValue) {
+    init(id: UUID? = nil, name: String, galaxyID: Galaxy.IDValue) {
         self.id = id
         self.name = name
         self.$galaxy.id = galaxyID
     }
 }
 
-public struct PlanetMigration: Migration {
-    public func prepare(on database: Database) -> EventLoopFuture<Void> {
+struct PlanetMigration: Migration {
+    func prepare(on database: Database) -> EventLoopFuture<Void> {
         return database.schema("planets")
             .field("id", .uuid, .identifier(auto: true))
             .field("name", .string, .required)
@@ -34,7 +34,7 @@ public struct PlanetMigration: Migration {
             .create()
     }
 
-    public func revert(on database: Database) -> EventLoopFuture<Void> {
+    func revert(on database: Database) -> EventLoopFuture<Void> {
         return database.schema("planets").delete()
     }
 }

@@ -7,7 +7,7 @@ struct SiblingSeeding: Migration {
             return tag
             .save(on: database)
             .transform(to: ())
-            .map { tag.$planets.attach(ChildSeeding.planets[0], on: database) }
+            .flatMap { tag.$planets.attach(ChildSeeding.planets[0], on: database).transform(to: ()) }
         }.flatten(on: database.eventLoop)
     }
     
