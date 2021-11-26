@@ -29,7 +29,7 @@ final class CrudRouteDeleteResponseTests: XCTestCase {
 
             XCTAssertEqual(allGalaxies.count, 1)
             try app.testable().test(.DELETE, "/galaxy/\(BaseGalaxySeeding.milkyWayId)") { (resp) in
-                XCTAssert(resp.status == .ok)
+                XCTAssert(resp.status == .noContent)
 
                 let allGalaxies = try app.db.query(Galaxy.self).all().wait()
 
@@ -52,7 +52,7 @@ final class CrudRouteDeleteResponseTests: XCTestCase {
             XCTAssertEqual(children.count, 1)
 
             try app.testable().test(.DELETE, "/galaxy/\(BaseGalaxySeeding.milkyWayId)/planet/\(ChildSeeding.earthId)") { (resp) in
-                XCTAssert(resp.status == .ok)
+                XCTAssert(resp.status == .noContent)
 
                 let galaxy = try Galaxy.find(BaseGalaxySeeding.milkyWayId, on: app.db).wait()
                 let children = try galaxy!.$planets.get(on: app.db).wait()
@@ -76,7 +76,7 @@ final class CrudRouteDeleteResponseTests: XCTestCase {
             XCTAssertEqual(tagSiblings.count, 1)
 
             try app.testable().test(.DELETE, "/planet/\(ChildSeeding.earthId)/tag/\(SiblingSeeding.lifeSupportingId)") { (resp) in
-                XCTAssertEqual(resp.status, .ok)
+                XCTAssertEqual(resp.status, .noContent)
 
                 let planet = try Planet.find(ChildSeeding.earthId, on: app.db).wait()
                 let tagSiblings = try planet!.$tags.get(on: app.db).wait()
@@ -100,7 +100,7 @@ final class CrudRouteDeleteResponseTests: XCTestCase {
             XCTAssertEqual(planetSiblings.count, 1)
 
             try app.testable().test(.DELETE, "/tag/\(SiblingSeeding.lifeSupportingId)/planet/\(ChildSeeding.earthId)") { (resp) in
-                XCTAssertEqual(resp.status, .ok)
+                XCTAssertEqual(resp.status, .noContent)
 
                 let tag = try Tag.find(SiblingSeeding.lifeSupportingId, on: app.db).wait()
                 let planetSiblings = try tag!.$planets.get(on: app.db).wait()

@@ -30,7 +30,7 @@ final class CrudRoutePostResponseTests: XCTestCase {
             try app.testable().test(.POST, "/galaxy", beforeRequest: { req in
                 try req.content.encode(newGalaxy)
             }) { (resp) in
-                XCTAssertEqual(resp.status, .ok)
+                XCTAssertEqual(resp.status, .created)
 
                 let decoded = try resp.content.decode(Galaxy.self)
 
@@ -63,7 +63,7 @@ final class CrudRoutePostResponseTests: XCTestCase {
             try app.testable().test(.POST, "/galaxy", beforeRequest: { req in
                 try req.content.encode(newGalaxy)
             }) { (resp) in
-                XCTAssertEqual(resp.status, .ok)
+                XCTAssertEqual(resp.status, .created)
                 
                 let decoded = try resp.content.decode(Galaxy.self)
                 
@@ -86,7 +86,7 @@ final class CrudRoutePostResponseTests: XCTestCase {
             try app.testable().test(.POST, "/galaxy/\(BaseGalaxySeeding.milkyWayId)/planet", beforeRequest: { req in
                 try req.content.encode(newPlanet)
             }) { (resp) in
-                XCTAssertEqual(resp.status, .ok)
+                XCTAssertEqual(resp.status, .created)
                 
                 let decoded = try resp.content.decode(Planet.self)
                 
@@ -122,7 +122,7 @@ final class CrudRoutePostResponseTests: XCTestCase {
             try app.testable().test(.POST, "/planet", beforeRequest: { req in
                 try req.content.encode(newPlanet)
             }) { (resp) in
-                XCTAssertEqual(resp.status, .ok)
+                XCTAssertEqual(resp.status, .created)
                
                 let decoded = try resp.content.decode(Planet.self)
                
@@ -170,7 +170,7 @@ final class CrudRoutePostResponseTests: XCTestCase {
             try app.testable().test(.POST, "/planet", beforeRequest: { req in
                 try req.content.encode(newPlanet)
             }) { (resp) in
-                XCTAssertEqual(resp.status, .ok)
+                XCTAssertEqual(resp.status, .created)
                 
                 let decoded = try resp.content.decode(Planet.self)
                 
@@ -194,7 +194,7 @@ final class CrudRoutePostResponseTests: XCTestCase {
             try app.testable().test(.POST, "/tag", beforeRequest: { req in
                 try req.content.encode(newTag)
             }) { (resp) in
-                XCTAssertEqual(resp.status, .ok)
+                XCTAssertEqual(resp.status, .created)
                 
                 let decoded = try resp.content.decode(Tag.self)
                 
@@ -217,7 +217,7 @@ final class CrudRoutePostResponseTests: XCTestCase {
             try app.testable().test(.POST, "/planet/\(newPlanetId)/tag", beforeRequest: { req in
                 try req.content.encode(otherNewTag)
             }) { (resp) in
-                XCTAssertEqual(resp.status, .ok)
+                XCTAssertEqual(resp.status, .created)
                 
                 let decoded = try resp.content.decode(Tag.self)
                 
@@ -240,7 +240,7 @@ final class CrudRoutePostResponseTests: XCTestCase {
             try app.testable().test(.POST, "/tag/\(newTagId)/planet", beforeRequest: { req in
                 try req.content.encode(otherNewPlanet)
             }) { (resp) in
-                XCTAssertEqual(resp.status, .ok)
+                XCTAssertEqual(resp.status, .created)
                 
                 let decoded = try resp.content.decode(Planet.self)
                 

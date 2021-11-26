@@ -8,13 +8,15 @@ protocol CrudSiblingsControllerProtocol {
 
     var siblings: KeyPath<ParentType, SiblingsProperty<ParentType, ChildType, ThroughType>> { get }
 
-    func index(_ req: Request) async throws -> ChildType
-    func indexAll(_ req: Request) async throws -> [ChildType]
-    func update(_ req: Request) async throws -> ChildType
+    func index(_ req: Request) async throws -> Response
+    func indexAll(_ req: Request) async throws -> Response
+    func create(_ req: Request) async throws -> Response
+    func update(_ req: Request) async throws -> Response
+    func delete(_ req: Request) async throws -> Response
 }
 
 extension CrudSiblingsControllerProtocol {
-    func index(_ req: Request) async throws -> ChildType {
+    func index(_ req: Request) async throws -> Response {
         let parentId = try req.getId(modelType: ParentType.self)
         let childId = try req.getId(modelType: ChildType.self)
 
@@ -25,20 +27,33 @@ extension CrudSiblingsControllerProtocol {
             throw Abort(.notFound)
         }
 
-        return child
+        return try await child.encodeResponse(status: .ok, for: req)
     }
 
-    func indexAll(_ req: Request) async throws -> [ChildType] {
+    func indexAll(_ req: Request) async throws -> Response {
         let parentId = try req.getId(modelType: ParentType.self)
 
         guard let parent = try await ParentType.find(parentId, on: req.db) else {
             throw Abort(.notFound)
         }
 
-        return try await parent[keyPath: self.siblings].query(on: req.db).all()
+        let siblings = try await parent[keyPath: self.siblings].query(on: req.db).all()
+        return try await siblings.encodeResponse(status: .ok, for: req)
     }
 
-    func update(_ req: Request) async throws -> ChildType {
+    func create(_ req: Request) async throws -> Response {
+        let parentId = try req.getId(modelType: ParentType.self)
+
+        guard let parent = try await ParentType.find(parentId, on: req.db) else {
+            throw Abort(.notFound)
+        }
+
+        let newChild = try req.content.decode(ChildType.self)
+        try await parent[keyPath: self.siblings].attach(newChild, on: req.db)
+        return try await newChild.encodeResponse(status: .created, for: req)
+    }
+
+    func update(_ req: Request) async throws -> Response {
         let parentId = try req.getId(modelType: ParentType.self)
         let childId = try req.getId(modelType: ChildType.self)
 
@@ -54,22 +69,10 @@ extension CrudSiblingsControllerProtocol {
         temp._$id.exists = true
         temp.id = childId
         try await temp.update(on: req.db)
-        return temp
+        return try await temp.encodeResponse(status: .ok, for: req)
     }
 
-    func create(_ req: Request) async throws -> ChildType {
-        let parentId = try req.getId(modelType: ParentType.self)
-
-        guard let parent = try await ParentType.find(parentId, on: req.db) else {
-            throw Abort(.notFound)
-        }
-
-        let newChild = try req.content.decode(ChildType.self)
-        try await parent[keyPath: self.siblings].attach(newChild, on: req.db)
-        return newChild
-    }
-
-    func delete(_ req: Request) async throws -> HTTPStatus {
+    func delete(_ req: Request) async throws -> Response {
         let parentId = try req.getId(modelType: ParentType.self)
 
         guard let parent = try await ParentType.find(parentId, on: req.db) else {
@@ -84,6 +87,6 @@ extension CrudSiblingsControllerProtocol {
 
         try await siblingsRelation.detach(child, on: req.db)
         try await child.delete(on: req.db)
-        return HTTPStatus.ok
+        return try await HTTPStatus.noContent.encodeResponse(for: req)
     }
 }

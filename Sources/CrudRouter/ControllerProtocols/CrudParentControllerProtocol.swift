@@ -7,22 +7,23 @@ protocol CrudParentControllerProtocol {
 
     var relation: KeyPath<ChildType, ParentProperty<ChildType, ParentType>> { get }
 
-    func index(_ req: Request) async throws -> ParentType
-    func update(_ req: Request) async throws -> ParentType
+    func index(_ req: Request) async throws -> Response
+    func update(_ req: Request) async throws -> Response
 }
 
 extension CrudParentControllerProtocol {
-    func index(_ req: Request) async throws -> ParentType {
+    func index(_ req: Request) async throws -> Response {
         let childId = try req.getId(modelType: ChildType.self)
 
         guard let child = try await ChildType.find(childId, on: req.db) else {
             throw Abort(.notFound)
         }
 
-        return try await child[keyPath: self.relation].get(on: req.db)
+        let body = try await child[keyPath: self.relation].get(on: req.db)
+        return try await body.encodeResponse(status: .ok, for: req)
     }
 
-    func update(_ req: Request) async throws -> ParentType {
+    func update(_ req: Request) async throws -> Response {
         let childId = try req.getId(modelType: ChildType.self)
         let newParent = try req.content.decode(ParentType.self)
 
@@ -36,6 +37,6 @@ extension CrudParentControllerProtocol {
         temp.id = oldParent.id
         temp._$id.exists = true
         try await temp.update(on: req.db)
-        return temp
+        return try await temp.encodeResponse(status: .ok, for: req)
     }
 }
