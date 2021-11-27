@@ -13,6 +13,7 @@ public struct CrudParentController<
     public let relation: KeyPath<OriginType, ParentProperty<OriginType, ParentType>>
     public let path: [PathComponent]
     public let router: RoutesBuilder
+
     let activeMethods: Set<ParentRouterMethod>
 
     init(

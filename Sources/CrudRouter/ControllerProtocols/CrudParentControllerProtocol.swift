@@ -2,7 +2,7 @@ import Vapor
 import FluentKit
 
 protocol CrudParentControllerProtocol {
-    associatedtype ParentType: Model & Content where ParentType.IDValue: LosslessStringConvertible
+    associatedtype ParentType: Model & Content
     associatedtype ChildType: Model & Content where ChildType.IDValue: LosslessStringConvertible
 
     var relation: KeyPath<ChildType, ParentProperty<ChildType, ParentType>> { get }

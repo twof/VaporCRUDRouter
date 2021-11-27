@@ -9,6 +9,7 @@ public struct CrudController<
 
     public let path: [PathComponent]
     public let router: RoutesBuilder
+
     let activeMethods: Set<RouterMethod>
 
     init(

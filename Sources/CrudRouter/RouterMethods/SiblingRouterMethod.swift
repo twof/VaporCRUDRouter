@@ -1,7 +1,6 @@
 import Vapor
-import Fluent
 
-public enum ModifiableSiblingRouterMethod {
+public enum SiblingRouterMethod: CaseIterable {
     case read
     case readAll
     case create

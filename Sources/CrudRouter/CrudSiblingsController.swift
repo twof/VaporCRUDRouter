@@ -11,16 +11,17 @@ public struct CrudSiblingsController<
 {
     public typealias TargetType = SiblingType
     
-    public var siblings: KeyPath<OriginType, SiblingsProperty<OriginType, SiblingType, ThroughType>>
+    public let siblings: KeyPath<OriginType, SiblingsProperty<OriginType, SiblingType, ThroughType>>
     public let path: [PathComponent]
     public let router: RoutesBuilder
-    let activeMethods: Set<ModifiableSiblingRouterMethod>
+
+    let activeMethods: Set<SiblingRouterMethod>
 
     init(
         siblingRelation: KeyPath<OriginType, SiblingsProperty<OriginType, SiblingType, ThroughType>>,
         path: [PathComponent],
         router: RoutesBuilder,
-        activeMethods: Set<ModifiableSiblingRouterMethod>
+        activeMethods: Set<SiblingRouterMethod>
     ) {
         self.siblings = siblingRelation
         self.path = path

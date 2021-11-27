@@ -1,6 +1,6 @@
 import Vapor
 
-public enum ChildrenRouterMethod {
+public enum ChildrenRouterMethod: CaseIterable {
     case read
     case readAll
     case create

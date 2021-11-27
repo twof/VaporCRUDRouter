@@ -10,10 +10,10 @@ public struct CrudChildrenController<
 {
     public typealias TargetType = ChildType
 
-    public var router: RoutesBuilder
+    public let router: RoutesBuilder
+    public let path: [PathComponent]
 
     var children: KeyPath<OriginType, ChildrenProperty<OriginType, ChildType>>
-    public let path: [PathComponent]
     let activeMethods: Set<ChildrenRouterMethod>
 
     init(
