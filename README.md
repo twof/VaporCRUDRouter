@@ -122,7 +122,6 @@ GET /todo/:id/tag/:id
 ### Future features
 - query parameter support
 - PATCH support
-- more fine grained response statuses
 - automatically expose relations (blocked by lack of Swift reflection support)
 - documentation for all public functions
 - generate models and rest routes via console command

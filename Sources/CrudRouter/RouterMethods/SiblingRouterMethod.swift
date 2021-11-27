@@ -1,46 +1,23 @@
 import Vapor
-import Fluent
 
-public enum ModifiableSiblingRouterMethod {
+public enum SiblingRouterMethod: CaseIterable {
     case read
     case readAll
     case create
     case update
     case delete
 
-    func register<ChildType, ParentType, ThroughType: ModifiablePivot>(
-        router: Router,
+    func register<ChildType, ParentType, ThroughType>(
+        router: RoutesBuilder,
         controller: CrudSiblingsController<ChildType, ParentType, ThroughType>,
-        path: [PathComponentsRepresentable],
-        idPath: [PathComponentsRepresentable]
-    ) where ThroughType.Left == ParentType,
-        ThroughType.Right == ChildType {
+        path: [PathComponent],
+        idPath: [PathComponent]
+    ) {
             switch self {
             case .read:
-                router.get(idPath, use: controller.index)
+                router.on(.GET, idPath, use: controller.index)
             case .readAll:
-                router.get(path, use: controller.indexAll)
-            case .create:
-                router.post(path, use: controller.create)
-            case .update:
-                router.put(idPath, use: controller.update)
-            case .delete:
-                router.delete(idPath, use: controller.delete)
-            }
-    }
-
-    func register<ChildType, ParentType, ThroughType: ModifiablePivot>(
-        router: Router,
-        controller: CrudSiblingsController<ChildType, ParentType, ThroughType>,
-        path: [PathComponentsRepresentable],
-        idPath: [PathComponentsRepresentable]
-    ) where ThroughType.Left == ChildType,
-        ThroughType.Right == ParentType {
-            switch self {
-            case .read:
-                router.get(idPath, use: controller.index)
-            case .readAll:
-                router.get(path, use: controller.indexAll)
+                router.on(.GET, path, use: controller.indexAll)
             case .create:
                 router.post(path, use: controller.create)
             case .update:

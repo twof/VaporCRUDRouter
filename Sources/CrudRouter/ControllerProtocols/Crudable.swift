@@ -1,186 +1,431 @@
 import Vapor
 import Fluent
 
-public protocol Crudable: ControllerProtocol {
-    associatedtype ChildType: Model, Content where ChildType.ID: Parameter
+public protocol Crudable {
+    associatedtype OriginType: Model, Content
+    associatedtype TargetType: Model, Content where TargetType.IDValue: LosslessStringConvertible
+
+    var path: [PathComponent] { get }
+    var router: RoutesBuilder { get }
 
     func crud<ParentType>(
-        at path: PathComponentsRepresentable...,
-        parent relation: KeyPath<ChildType, Parent<ChildType, ParentType>>,
+        at path: PathComponent...,
+        parent relation: KeyPath<TargetType, ParentProperty<TargetType, ParentType>>,
         _ either: OnlyExceptEither<ParentRouterMethod>,
-        relationConfiguration: ((CrudParentController<ChildType, ParentType>) -> Void)?
+        relationConfiguration: ((CrudParentController<TargetType, ParentType>) -> Void)?
     ) where
-        ParentType: Model & Content,
-        ChildType.Database == ParentType.Database,
-        ParentType.ID: Parameter
+        ParentType: Model & Content
 
-    func crud<ChildChildType>(
-        at path: PathComponentsRepresentable...,
-        children relation: KeyPath<ChildType, Children<ChildType, ChildChildType>>,
+    func crud<ParentType>(
+        at path: [PathComponent],
+        parent relation: KeyPath<TargetType, ParentProperty<TargetType, ParentType>>,
+        _ either: OnlyExceptEither<ParentRouterMethod>,
+        relationConfiguration: ((CrudParentController<TargetType, ParentType>) -> Void)?
+    ) where
+        ParentType: Model & Content
+
+    func crud<ChildType>(
+        at path: PathComponent...,
+        children relation: KeyPath<TargetType, ChildrenProperty<TargetType, ChildType>>,
         _ either: OnlyExceptEither<ChildrenRouterMethod>,
-        relationConfiguration: ((CrudChildrenController<ChildChildType, ChildType>) -> Void)?
+        relationConfiguration: ((CrudChildrenController<TargetType, ChildType>) -> Void)?
     ) where
-        ChildChildType: Model & Content,
-        ChildType.Database == ChildChildType.Database,
-        ChildChildType.ID: Parameter
+        ChildType: Model & Content
 
-    func crud<ChildChildType, ThroughType>(
-        at path: PathComponentsRepresentable...,
-        siblings relation: KeyPath<ChildType, Siblings<ChildType, ChildChildType, ThroughType>>,
-        _ either: OnlyExceptEither<ModifiableSiblingRouterMethod>,
-        relationConfiguration: ((CrudSiblingsController<ChildChildType, ChildType, ThroughType>) -> Void)?
+    func crud<ChildType>(
+        at path: [PathComponent],
+        children relation: KeyPath<TargetType, ChildrenProperty<TargetType, ChildType>>,
+        _ either: OnlyExceptEither<ChildrenRouterMethod>,
+        relationConfiguration: ((CrudChildrenController<TargetType, ChildType>) -> Void)?
     ) where
-        ChildChildType: Content,
-        ChildType.Database == ThroughType.Database,
-        ChildChildType.ID: Parameter,
-        ThroughType: ModifiablePivot,
-        ThroughType.Database: JoinSupporting,
-        ThroughType.Database == ChildChildType.Database,
-        ThroughType.Left == ChildType,
-        ThroughType.Right == ChildChildType
+        ChildType: Model & Content
 
-    func crud<ChildChildType, ThroughType>(
-        at path: PathComponentsRepresentable...,
-        siblings relation: KeyPath<ChildType, Siblings<ChildType, ChildChildType, ThroughType>>,
-        _ either: OnlyExceptEither<ModifiableSiblingRouterMethod>,
-        relationConfiguration: ((CrudSiblingsController<ChildChildType, ChildType, ThroughType>) -> Void)?
+    func crud<SiblingType, ThroughType>(
+        at path: PathComponent...,
+        siblings relation: KeyPath<TargetType, SiblingsProperty<TargetType, SiblingType, ThroughType>>,
+        _ either: OnlyExceptEither<SiblingRouterMethod>,
+        relationConfiguration: ((CrudSiblingsController<TargetType, SiblingType, ThroughType>) -> Void)?
     ) where
-        ChildChildType: Content,
-        ChildType.Database == ThroughType.Database,
-        ChildChildType.ID: Parameter,
-        ThroughType: ModifiablePivot,
-        ThroughType.Database: JoinSupporting,
-        ThroughType.Database == ChildChildType.Database,
-        ThroughType.Right == ChildType,
-        ThroughType.Left == ChildChildType
+        SiblingType: Content,
+        ThroughType: Model
+
+    func crud<SiblingType, ThroughType>(
+        at path: [PathComponent],
+        siblings relation: KeyPath<TargetType, SiblingsProperty<TargetType, SiblingType, ThroughType>>,
+        _ either: OnlyExceptEither<SiblingRouterMethod>,
+        relationConfiguration: ((CrudSiblingsController<TargetType, SiblingType, ThroughType>) -> Void)?
+    ) where
+        SiblingType: Content,
+        ThroughType: Model
 }
 
 extension Crudable {
+    /// Creates CRUD endpoints for the suplied `relation`.
+    ///
+    /// By default, the routes will be created that
+    /// - Get the parent
+    /// - Update the parent
+    ///
+    /// For example
+    ///    ```swift
+    ///    router.crud(register: Todo.self) { todoRouter in
+    ///        todoRouter.crud("owner", parent: \.$owner)
+    ///    }
+    ///    ```
+    /// Will create the following routes.
+    ///
+    ///    ```
+    ///    GET     /todo/:id/owner
+    ///    PUT     /todo/:id/owner
+    ///    ```
+    ///
+    /// - Parameter path: Overrides the path instead of using the default path string.
+    /// - Parameter relation: Parent relation on the router's model type.
+    /// - Parameter either: Users can select a subset of endpoints to generate with `.only()` or exclude a subset of endpoints with `.except()`
+    /// - Parameter relationConfiguration: Closure that can be used to configure endpoints for children, parents or siblings of `type`.
+    ///
+    ///     For example
+    ///        ```
+    ///        app.crud("foo", register: Planet.self) { router in
+    ///            router.crud(at: "foo", parent: \.$galaxy) { galaxyRouter in
+    ///                galaxyRouter.crud(children: \.$planets)
+    ///            }
+    ///        }
+    ///        ```
     public func crud<ParentType>(
-        at path: PathComponentsRepresentable...,
-        parent relation: KeyPath<ChildType, Parent<ChildType, ParentType>>,
-        _ either: OnlyExceptEither<ParentRouterMethod> = .only([.read, .update]),
-        relationConfiguration: ((CrudParentController<ChildType, ParentType>) -> Void)?=nil
+        at path: [PathComponent],
+        parent relation: KeyPath<TargetType, ParentProperty<TargetType, ParentType>>,
+        _ either: OnlyExceptEither<ParentRouterMethod> = .only(ParentRouterMethod.allCases),
+        relationConfiguration: ((CrudParentController<TargetType, ParentType>) -> Void)?=nil
     ) where
-        ParentType: Model & Content,
-        ChildType.Database == ParentType.Database,
-        ParentType.ID: Parameter {
-            let baseIdPath = self.path.appending(ChildType.ID.parameter)
-            let adjustedPath = path.adjustedPath(for: ParentType.self)
+        ParentType: Model & Content
+    {
+        let baseIdPath = self.path.appending(.parameter("\(OriginType.schema)ID"))
+        let adjustedPath = path.adjustedPath(for: ParentType.self)
 
-            let fullPath = baseIdPath.appending(adjustedPath)
+        let fullPath = baseIdPath + adjustedPath
 
+        let controller: CrudParentController<TargetType, ParentType>
 
-            let allMethods: Set<ParentRouterMethod> = Set([.read, .update])
-            let controller: CrudParentController<ChildType, ParentType>
+        switch either {
+        case .only(let methods):
+            controller = CrudParentController(
+                relation: relation,
+                path: fullPath,
+                router: self.router,
+                activeMethods: Set(methods)
+            )
+        case .except(let methods):
+            let allMethods = Set(ParentRouterMethod.allCases)
+            controller = CrudParentController(
+                relation: relation,
+                path: fullPath,
+                router: self.router,
+                activeMethods: allMethods.subtracting(Set(methods))
+            )
+        }
 
-            switch either {
-            case .only(let methods):
-                controller = CrudParentController(relation: relation, path: fullPath, router: self.router, activeMethods: Set(methods))
-            case .except(let methods):
-                controller = CrudParentController(relation: relation, path: fullPath, router: self.router, activeMethods: allMethods.subtracting(Set(methods)))
-            }
+        do { try controller.boot(routes: self.router) } catch { fatalError("I have no reason to expect boot to throw") }
 
-            do { try controller.boot(router: self.router) } catch { fatalError("I have no reason to expect boot to throw") }
-
-            relationConfiguration?(controller)
+        relationConfiguration?(controller)
     }
 
-    public func crud<ChildChildType>(
-        at path: PathComponentsRepresentable...,
-        children relation: KeyPath<ChildType, Children<ChildType, ChildChildType>>,
-        _ either: OnlyExceptEither<ChildrenRouterMethod> = .only([.read, .readAll, .create, .update, .delete]),
-        relationConfiguration: ((CrudChildrenController<ChildChildType, ChildType>) -> Void)?=nil
+    /// Creates CRUD endpoints for the suplied `relation`.
+    ///
+    /// By default, the routes will be created that
+    /// - Get the parent
+    /// - Update the parent
+    ///
+    /// For example
+    ///    ```swift
+    ///    router.crud(register: Todo.self) { todoRouter in
+    ///        todoRouter.crud("owner", parent: \.$owner)
+    ///    }
+    ///    ```
+    /// Will create the following routes.
+    ///
+    ///    ```
+    ///    GET     /todo/:id/owner
+    ///    PUT     /todo/:id/owner
+    ///    ```
+    ///
+    /// - Parameter path: Overrides the path instead of using the default path string.
+    /// - Parameter relation: Parent relation on the router's model type.
+    /// - Parameter either: Users can select a subset of endpoints to generate with `.only()` or exclude a subset of endpoints with `.except()`
+    /// - Parameter relationConfiguration: Closure that can be used to configure endpoints for children, parents or siblings of `type`.
+    ///
+    ///     For example
+    ///        ```
+    ///        app.crud("foo", register: Planet.self) { router in
+    ///            router.crud(at: "foo", parent: \.$galaxy) { galaxyRouter in
+    ///                galaxyRouter.crud(children: \.$planets)
+    ///            }
+    ///        }
+    ///        ```
+    public func crud<ParentType>(
+        at path: PathComponent...,
+        parent relation: KeyPath<TargetType, ParentProperty<TargetType, ParentType>>,
+        _ either: OnlyExceptEither<ParentRouterMethod> = .only(ParentRouterMethod.allCases),
+        relationConfiguration: ((CrudParentController<TargetType, ParentType>) -> Void)?=nil
     ) where
-        ChildChildType: Model & Content,
-        ChildType.Database == ChildChildType.Database,
-        ChildChildType.ID: Parameter {
-            let baseIdPath = self.path.appending(ChildType.ID.parameter)
-            let adjustedPath = path.adjustedPath(for: ChildChildType.self)
-
-            let fullPath = baseIdPath.appending(adjustedPath)
-
-            let allMethods: Set<ChildrenRouterMethod> = Set([.read, .update])
-            let controller: CrudChildrenController<ChildChildType, ChildType>
-
-            switch either {
-            case .only(let methods):
-                controller = CrudChildrenController<ChildChildType, ChildType>(childrenRelation: relation, path: fullPath, router: self.router, activeMethods: Set(methods))
-            case .except(let methods):
-                controller = CrudChildrenController<ChildChildType, ChildType>(childrenRelation: relation, path: fullPath, router: self.router, activeMethods: allMethods.subtracting(Set(methods)))
-            }
-
-            do { try controller.boot(router: self.router) } catch { fatalError("I have no reason to expect boot to throw") }
-
-            relationConfiguration?(controller)
+        ParentType: Model & Content
+    {
+        crud(at: path, parent: relation, either, relationConfiguration: relationConfiguration)
     }
 
-    public func crud<ChildChildType, ThroughType>(
-        at path: PathComponentsRepresentable...,
-        siblings relation: KeyPath<ChildType, Siblings<ChildType, ChildChildType, ThroughType>>,
-        _ either: OnlyExceptEither<ModifiableSiblingRouterMethod> = .only([.read, .readAll, .create, .update, .delete]),
-        relationConfiguration: ((CrudSiblingsController<ChildChildType, ChildType, ThroughType>) -> Void)?=nil
+    /// Creates CRUD endpoints for the suplied `relation`.
+    ///
+    /// By default, the routes will be created that
+    ///
+    /// - Get an individual child with the provided ID
+    /// - Get all children
+    /// - Create a new child
+    /// - Update a child with the provided ID
+    /// - Delete a child with the provided ID
+    ///
+    /// For example
+    ///    ```swift
+    ///    router.crud(register: Todo.self) { todoRouter in
+    ///        todoRouter.crud("subtasks", children: \.$subtasks)
+    ///    }
+    ///    ```
+    /// Will create the following routes.
+    ///
+    ///    ```
+    ///    GET     /todo/:id/subtasks
+    ///    GET     /todo/:id/subtasks/:id
+    ///    POST    /todo/:id/subtasks
+    ///    PUT     /todo/:id/subtasks/:id
+    ///    DELETE  /todo/:id/subtasks/:id
+    ///    ```
+    ///
+    /// - Parameter path: Overrides the path instead of using the default path string.
+    /// - Parameter relation: Children relation on the router's model type.
+    /// - Parameter either: Users can select a subset of endpoints to generate with `.only()` or exclude a subset of endpoints with `.except()`
+    /// - Parameter relationConfiguration: Closure that can be used to configure endpoints for children, parents or siblings of `type`.
+    ///
+    ///     For example
+    ///        ```
+    ///        app.crud("foo", register: Galaxy.self) { router in
+    ///            router.crud(at: "foo", children: \.$planets) { planetRouter in
+    ///                planetRouter.crud(parent: \.$galaxy)
+    ///            }
+    ///        }
+    ///        ```
+    public func crud<ChildType>(
+        at path: [PathComponent],
+        children relation: KeyPath<TargetType, ChildrenProperty<TargetType, ChildType>>,
+        _ either: OnlyExceptEither<ChildrenRouterMethod> = .only(ChildrenRouterMethod.allCases),
+        relationConfiguration: ((CrudChildrenController<TargetType, ChildType>) -> Void)?=nil
     ) where
-        ChildChildType: Content,
-        ChildType.Database == ThroughType.Database,
-        ChildChildType.ID: Parameter,
-        ThroughType: ModifiablePivot,
-        ThroughType.Database: JoinSupporting,
-        ThroughType.Database == ChildChildType.Database,
-        ThroughType.Left == ChildType,
-        ThroughType.Right == ChildChildType {
-            let baseIdPath = self.path.appending(ChildType.ID.parameter)
-            let adjustedPath = path.adjustedPath(for: ChildChildType.self)
+        ChildType: Model & Content
+    {
+        let baseIdPath = self.path.appending(.parameter("\(OriginType.schema)ID"))
+        let adjustedPath = path.adjustedPath(for: ChildType.self)
 
-            let fullPath = baseIdPath.appending(adjustedPath)
+        let fullPath = baseIdPath + adjustedPath
 
-            let allMethods: Set<ModifiableSiblingRouterMethod> = Set([.read, .readAll, .create, .update, .delete])
-            let controller: CrudSiblingsController<ChildChildType, ChildType, ThroughType>
+        let controller: CrudChildrenController<TargetType, ChildType>
 
-            switch either {
-            case .only(let methods):
-                controller = CrudSiblingsController<ChildChildType, ChildType, ThroughType>(siblingRelation: relation, path: fullPath, router:
-                    self.router, activeMethods: Set(methods))
-            case .except(let methods):
-                controller = CrudSiblingsController<ChildChildType, ChildType, ThroughType>(siblingRelation: relation, path: fullPath, router: self.router, activeMethods: allMethods.subtracting(Set(methods)))
-            }
+        switch either {
+        case .only(let methods):
+            controller = CrudChildrenController(
+                childrenRelation: relation,
+                path: fullPath,
+                router: self.router,
+                activeMethods: Set(methods)
+            )
+        case .except(let methods):
+            let allMethods = Set(ChildrenRouterMethod.allCases)
+            controller = CrudChildrenController(
+                childrenRelation: relation,
+                path: fullPath,
+                router: self.router,
+                activeMethods: allMethods.subtracting(Set(methods))
+            )
+        }
 
-             do { try controller.boot(router: self.router) } catch { fatalError("I have no reason to expect boot to throw") }
+        do { try controller.boot(routes: self.router) } catch { fatalError("I have no reason to expect boot to throw") }
 
-            relationConfiguration?(controller)
+        relationConfiguration?(controller)
     }
 
-    public func crud<ChildChildType, ThroughType>(
-        at path: PathComponentsRepresentable...,
-        siblings relation: KeyPath<ChildType, Siblings<ChildType, ChildChildType, ThroughType>>,
-        _ either: OnlyExceptEither<ModifiableSiblingRouterMethod> = .only([.read, .readAll, .create, .update, .delete]),
-        relationConfiguration: ((CrudSiblingsController<ChildChildType, ChildType, ThroughType>) -> Void)?=nil
+    /// Creates CRUD endpoints for the suplied `relation`.
+    ///
+    /// By default, the routes will be created that
+    ///
+    /// - Get an individual child with the provided ID
+    /// - Get all children
+    /// - Create a new child
+    /// - Update a child with the provided ID
+    /// - Delete a child with the provided ID
+    ///
+    /// For example
+    ///    ```swift
+    ///    router.crud(register: Todo.self) { todoRouter in
+    ///        todoRouter.crud("subtasks", children: \.$subtasks)
+    ///    }
+    ///    ```
+    /// Will create the following routes.
+    ///
+    ///    ```
+    ///    GET     /todo/:id/subtasks
+    ///    GET     /todo/:id/subtasks/:id
+    ///    POST    /todo/:id/subtasks
+    ///    PUT     /todo/:id/subtasks/:id
+    ///    DELETE  /todo/:id/subtasks/:id
+    ///    ```
+    ///
+    /// - Parameter path: Overrides the path instead of using the default path string.
+    /// - Parameter relation: Children relation on the router's model type.
+    /// - Parameter either: Users can select a subset of endpoints to generate with `.only()` or exclude a subset of endpoints with `.except()`
+    /// - Parameter relationConfiguration: Closure that can be used to configure endpoints for children, parents or siblings of `type`.
+    ///
+    ///     For example
+    ///        ```
+    ///        app.crud("foo", register: Galaxy.self) { router in
+    ///            router.crud(at: "foo", children: \.$planets) { planetRouter in
+    ///                planetRouter.crud(parent: \.$galaxy)
+    ///            }
+    ///        }
+    ///        ```
+    public func crud<ChildType>(
+        at path: PathComponent...,
+        children relation: KeyPath<TargetType, ChildrenProperty<TargetType, ChildType>>,
+        _ either: OnlyExceptEither<ChildrenRouterMethod> = .only(ChildrenRouterMethod.allCases),
+        relationConfiguration: ((CrudChildrenController<TargetType, ChildType>) -> Void)?=nil
     ) where
-        ChildChildType: Content,
-        ChildType.Database == ThroughType.Database,
-        ChildChildType.ID: Parameter,
-        ThroughType: ModifiablePivot,
-        ThroughType.Database: JoinSupporting,
-        ThroughType.Database == ChildChildType.Database,
-        ThroughType.Right == ChildType,
-        ThroughType.Left == ChildChildType {
-            let baseIdPath = self.path.appending(ChildType.ID.parameter)
-            let adjustedPath = path.adjustedPath(for: ChildChildType.self)
+        ChildType: Model & Content
+    {
+        crud(at: path, children: relation, either, relationConfiguration: relationConfiguration)
+    }
 
-            let fullPath = baseIdPath.appending(adjustedPath)
+    /// Creates CRUD endpoints for the suplied `relation`.
+    ///
+    /// By default, the routes will be created that
+    ///
+    /// - Get an individual sibling with the provided ID
+    /// - Get all siblings
+    /// - Create a new sibling
+    /// - Update a sibling with the provided ID
+    /// - Delete a sibling with the provided ID
+    ///
+    /// For example
+    ///    ```swift
+    ///    router.crud(register: Todo.self) { todoRouter in
+    ///        todoRouter.crud("tags", siblings: \.$tags)
+    ///    }
+    ///    ```
+    /// Will create the following routes.
+    ///
+    ///    ```
+    ///    GET     /todo/:id/tags
+    ///    GET     /todo/:id/tags/:id
+    ///    POST    /todo/:id/tags
+    ///    PUT     /todo/:id/tags/:id
+    ///    DELETE  /todo/:id/tags/:id
+    ///    ```
+    ///
+    /// - Parameter path: Overrides the path instead of using the default path string.
+    /// - Parameter relation: Sibling relation on the router's model type.
+    /// - Parameter either: Users can select a subset of endpoints to generate with `.only()` or exclude a subset of endpoints with `.except()`
+    /// - Parameter relationConfiguration: Closure that can be used to configure endpoints for children, parents or siblings of `type`.
+    ///
+    ///     For example
+    ///        ```
+    ///        app.crud("foo", register: Planet.self) { router in
+    ///            router.crud(at: "foo", siblings: \.$tags) { tagRouter in
+    ///                tagRouter.crud(siblings: \.$planets)
+    ///            }
+    ///        }
+    ///        ```
+    public func crud<SiblingType, ThroughType>(
+        at path: [PathComponent],
+        siblings relation: KeyPath<TargetType, SiblingsProperty<TargetType, SiblingType, ThroughType>>,
+        _ either: OnlyExceptEither<SiblingRouterMethod> = .only(SiblingRouterMethod.allCases),
+        relationConfiguration: ((CrudSiblingsController<TargetType, SiblingType, ThroughType>) -> Void)?=nil
+    ) where
+        SiblingType: Content,
+        ThroughType: Model
+    {
+        let baseIdPath = self.path.appending(.parameter("\(OriginType.schema)ID"))
+        let adjustedPath = path.adjustedPath(for: SiblingType.self)
 
-            let allMethods: Set<ModifiableSiblingRouterMethod> = Set([.read, .readAll, .create, .update, .delete])
-            let controller: CrudSiblingsController<ChildChildType, ChildType, ThroughType>
+        let fullPath = baseIdPath + adjustedPath
 
-            switch either {
-            case .only(let methods):
-                controller = CrudSiblingsController<ChildChildType, ChildType, ThroughType>(siblingRelation: relation, path: fullPath, router: self.router, activeMethods: Set(methods))
-            case .except(let methods):
-                controller = CrudSiblingsController<ChildChildType, ChildType, ThroughType>(siblingRelation: relation, path: fullPath, router: self.router, activeMethods: allMethods.subtracting(Set(methods)))
-            }
+        let controller: CrudSiblingsController<TargetType, SiblingType, ThroughType>
 
-            do { try controller.boot(router: self.router) } catch { fatalError("I have no reason to expect boot to throw") }
+        switch either {
+        case .only(let methods):
+            controller = CrudSiblingsController(
+                siblingRelation: relation,
+                path: fullPath,
+                router: self.router,
+                activeMethods: Set(methods)
+            )
+        case .except(let methods):
+            let allMethods = Set(SiblingRouterMethod.allCases)
+            controller = CrudSiblingsController(
+                siblingRelation: relation,
+                path: fullPath,
+                router: self.router,
+                activeMethods: allMethods.subtracting(Set(methods))
+            )
+        }
 
-            relationConfiguration?(controller)
+        do { try controller.boot(routes: self.router) } catch { fatalError("I have no reason to expect boot to throw") }
+
+        relationConfiguration?(controller)
+    }
+
+    /// Creates CRUD endpoints for the suplied `relation`.
+    ///
+    /// By default, the routes will be created that
+    ///
+    /// - Get an individual sibling with the provided ID
+    /// - Get all siblings
+    /// - Create a new sibling
+    /// - Update a sibling with the provided ID
+    /// - Delete a sibling with the provided ID
+    ///
+    /// For example
+    ///    ```swift
+    ///    router.crud(register: Todo.self) { todoRouter in
+    ///        todoRouter.crud("tags", siblings: \.$tags)
+    ///    }
+    ///    ```
+    /// Will create the following routes.
+    ///
+    ///    ```
+    ///    GET     /todo/:id/tags
+    ///    GET     /todo/:id/tags/:id
+    ///    POST    /todo/:id/tags
+    ///    PUT     /todo/:id/tags/:id
+    ///    DELETE  /todo/:id/tags/:id
+    ///    ```
+    ///
+    /// - Parameter path: Overrides the path instead of using the default path string.
+    /// - Parameter relation: Sibling relation on the router's model type.
+    /// - Parameter either: Users can select a subset of endpoints to generate with `.only()` or exclude a subset of endpoints with `.except()`
+    /// - Parameter relationConfiguration: Closure that can be used to configure endpoints for children, parents or siblings of `type`.
+    ///
+    ///     For example
+    ///        ```
+    ///        app.crud("foo", register: Planet.self) { router in
+    ///            router.crud(at: "foo", siblings: \.$tags) { tagRouter in
+    ///                tagRouter.crud(siblings: \.$planets)
+    ///            }
+    ///        }
+    ///        ```
+    public func crud<SiblingType, ThroughType>(
+        at path: PathComponent...,
+        siblings relation: KeyPath<TargetType, SiblingsProperty<TargetType, SiblingType, ThroughType>>,
+        _ either: OnlyExceptEither<SiblingRouterMethod> = .only(SiblingRouterMethod.allCases),
+        relationConfiguration: ((CrudSiblingsController<TargetType, SiblingType, ThroughType>) -> Void)?=nil
+    ) where
+        SiblingType: Content,
+        ThroughType: Model
+    {
+        crud(at: path, siblings: relation, either, relationConfiguration: relationConfiguration)
     }
 }

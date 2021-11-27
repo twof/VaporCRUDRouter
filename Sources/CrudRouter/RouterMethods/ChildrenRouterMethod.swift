@@ -1,6 +1,6 @@
 import Vapor
 
-public enum ChildrenRouterMethod {
+public enum ChildrenRouterMethod: CaseIterable {
     case read
     case readAll
     case create
@@ -8,16 +8,16 @@ public enum ChildrenRouterMethod {
     case delete
 
     func register<ChildType, ParentType>(
-        router: Router,
+        router: RoutesBuilder,
         controller: CrudChildrenController<ChildType, ParentType>,
-        path: [PathComponentsRepresentable],
-        idPath: [PathComponentsRepresentable]
+        path: [PathComponent],
+        idPath: [PathComponent]
     ) {
         switch self {
         case .read:
-            router.get(idPath, use: controller.index)
+            router.on(.GET, idPath, use: controller.index)
         case .readAll:
-            router.get(path, use: controller.indexAll)
+            router.on(.GET, path, use: controller.indexAll)
         case .create:
             router.post(path, use: controller.create)
         case .update:

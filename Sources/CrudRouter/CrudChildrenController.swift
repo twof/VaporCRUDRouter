@@ -1,19 +1,25 @@
 import Vapor
 import Fluent
 
-public struct CrudChildrenController<ChildT: Model & Content, ParentT: Model & Content>: CrudChildrenControllerProtocol, Crudable where ChildT.ID: Parameter, ParentT.ID: Parameter, ChildT.Database == ParentT.Database {
-    public typealias ParentType = ParentT
-    public typealias ChildType = ChildT
+public struct CrudChildrenController<
+    OriginType: Model & Content,
+    ChildType: Model & Content
+>: CrudChildrenControllerProtocol, Crudable where
+    ChildType.IDValue: LosslessStringConvertible,
+    OriginType.IDValue: LosslessStringConvertible
+{
+    public typealias TargetType = ChildType
 
-    public var children: KeyPath<ParentT, Children<ParentT, ChildT>>
-    public let path: [PathComponentsRepresentable]
-    public let router: Router
+    public let router: RoutesBuilder
+    public let path: [PathComponent]
+
+    var children: KeyPath<OriginType, ChildrenProperty<OriginType, ChildType>>
     let activeMethods: Set<ChildrenRouterMethod>
 
     init(
-        childrenRelation: KeyPath<ParentT, Children<ParentT, ChildT>>,
-        path: [PathComponentsRepresentable],
-        router: Router,
+        childrenRelation: KeyPath<OriginType, ChildrenProperty<OriginType, ChildType>>,
+        path: [PathComponent],
+        router: RoutesBuilder,
         activeMethods: Set<ChildrenRouterMethod>
     ) {
         self.children = childrenRelation
@@ -24,16 +30,16 @@ public struct CrudChildrenController<ChildT: Model & Content, ParentT: Model & C
 }
 
 extension CrudChildrenController: RouteCollection {
-    public func boot(router: Router) throws {
-        let parentPath = self.path
-        let parentIdPath = self.path.appending(ParentType.ID.parameter)
+    public func boot(routes routesBuilder: RoutesBuilder) throws {
+        let originPath = self.path
+        let originIdPath = self.path.appending(.parameter("\(ChildType.schema)ID"))
 
         self.activeMethods.forEach {
             $0.register(
                 router: router,
                 controller: self,
-                path: parentPath,
-                idPath: parentIdPath
+                path: originPath,
+                idPath: originIdPath
             )
         }
     }

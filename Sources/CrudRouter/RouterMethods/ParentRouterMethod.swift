@@ -1,17 +1,17 @@
 import Vapor
 
-public enum ParentRouterMethod {
+public enum ParentRouterMethod: CaseIterable {
     case read
     case update
 
     func register<ChildType, ParentType>(
-        router: Router,
+        router: RoutesBuilder,
         controller: CrudParentController<ChildType, ParentType>,
-        path: [PathComponentsRepresentable]
+        path: [PathComponent]
     ) {
         switch self {
         case .read:
-            router.get(path, use: controller.index)
+            router.on(.GET, path, use: controller.index)
         case .update:
             router.put(path, use: controller.update)
         }

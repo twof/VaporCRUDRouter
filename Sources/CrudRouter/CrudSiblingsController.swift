@@ -1,27 +1,27 @@
 import Vapor
 import Fluent
 
-public struct CrudSiblingsController<ChildT: Model & Content, ParentT: Model & Content, ThroughT: ModifiablePivot>: CrudSiblingsControllerProtocol, Crudable where
-    ChildT.ID: Parameter,
-    ParentT.ID: Parameter,
-    ChildT.Database == ParentT.Database,
-    ThroughT.Database: JoinSupporting,
-    ThroughT.Database == ChildT.Database {
+public struct CrudSiblingsController<
+    OriginType: Model & Content,
+    SiblingType: Model & Content,
+    ThroughType: Model
+>: CrudSiblingsControllerProtocol, Crudable where
+    SiblingType.IDValue: LosslessStringConvertible,
+    OriginType.IDValue: LosslessStringConvertible
+{
+    public typealias TargetType = SiblingType
+    
+    public let siblings: KeyPath<OriginType, SiblingsProperty<OriginType, SiblingType, ThroughType>>
+    public let path: [PathComponent]
+    public let router: RoutesBuilder
 
-    public typealias ThroughType = ThroughT
-    public typealias ParentType = ParentT
-    public typealias ChildType = ChildT
-
-    public var siblings: KeyPath<ParentType, Siblings<ParentType, ChildType, ThroughType>>
-    public let path: [PathComponentsRepresentable]
-    public let router: Router
-    let activeMethods: Set<ModifiableSiblingRouterMethod>
+    let activeMethods: Set<SiblingRouterMethod>
 
     init(
-        siblingRelation: KeyPath<ParentType, Siblings<ParentType, ChildType, ThroughType>>,
-        path: [PathComponentsRepresentable],
-        router: Router,
-        activeMethods: Set<ModifiableSiblingRouterMethod>
+        siblingRelation: KeyPath<OriginType, SiblingsProperty<OriginType, SiblingType, ThroughType>>,
+        path: [PathComponent],
+        router: RoutesBuilder,
+        activeMethods: Set<SiblingRouterMethod>
     ) {
         self.siblings = siblingRelation
         self.path = path
@@ -32,47 +32,18 @@ public struct CrudSiblingsController<ChildT: Model & Content, ParentT: Model & C
 
 extension CrudSiblingsController: RouteCollection {}
 
-public extension CrudSiblingsController where ThroughType.Right == ParentType,
-ThroughType.Left == ChildType {
-    public func boot(router: Router) throws {
-        let parentPath = self.path
-        let parentIdPath = self.path.appending(ParentType.ID.parameter)
-
-        self.activeMethods.forEach {
-            $0.register(
-                router: router,
-                controller: self,
-                path: parentPath,
-                idPath: parentIdPath
-            )
-        }
-    }
-}
-
-public extension CrudSiblingsController where ThroughType.Left == ParentType,
-ThroughType.Right == ChildType {
-    public func boot(router: Router) throws {
-        let parentPath = self.path
-        let parentIdPath = self.path.appending(ParentType.ID.parameter)
-
-        self.activeMethods.forEach {
-            $0.register(
-                router: router,
-                controller: self,
-                path: parentPath,
-                idPath: parentIdPath
-            )
-        }
-    }
-}
-
 public extension CrudSiblingsController {
-    public func boot(router: Router) throws {
-        let parentPath = self.path
-        let parentIdPath = self.path.appending(ParentType.ID.parameter)
+    func boot(routes router: RoutesBuilder) throws {
+        let childPath = self.path
+        let childIdPath = self.path.appending(.parameter("\(SiblingType.schema)ID"))
 
-        router.get(parentIdPath, use: self.index)
-        router.get(parentPath, use: self.indexAll)
-        router.put(parentIdPath, use: self.update)
+        self.activeMethods.forEach {
+            $0.register(
+                router: router,
+                controller: self,
+                path: childPath,
+                idPath: childIdPath
+            )
+        }
     }
 }

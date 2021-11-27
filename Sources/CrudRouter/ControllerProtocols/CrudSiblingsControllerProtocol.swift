@@ -1,136 +1,92 @@
 import Vapor
-import Fluent
+import FluentKit
 
-public protocol CrudSiblingsControllerProtocol {
-    associatedtype ParentType: Model & Content where ParentType.ID: Parameter
-    associatedtype ChildType: Model & Content where ChildType.ID: Parameter, ChildType.Database == ParentType.Database
-    associatedtype ThroughType: ModifiablePivot where
-        ThroughType.Database: JoinSupporting,
-        ChildType.Database == ThroughType.Database
+protocol CrudSiblingsControllerProtocol {
+    associatedtype ParentType: Model & Content where ParentType.IDValue: LosslessStringConvertible
+    associatedtype ChildType: Model & Content where ChildType.IDValue: LosslessStringConvertible
+    associatedtype ThroughType: Model
 
-    var siblings: KeyPath<ParentType, Siblings<ParentType, ChildType, ThroughType>> { get }
+    var siblings: KeyPath<ParentType, SiblingsProperty<ParentType, ChildType, ThroughType>> { get }
 
-    func index(_ req: Request) throws -> Future<ChildType>
-    func indexAll(_ req: Request) throws -> Future<[ChildType]>
-    func update(_ req: Request) throws -> Future<ChildType>
+    func index(_ req: Request) async throws -> Response
+    func indexAll(_ req: Request) async throws -> Response
+    func create(_ req: Request) async throws -> Response
+    func update(_ req: Request) async throws -> Response
+    func delete(_ req: Request) async throws -> Response
 }
 
-public extension CrudSiblingsControllerProtocol {
-    func index(_ req: Request) throws -> Future<ChildType> {
-        let parentId: ParentType.ID = try req.getId()
-        let childId: ChildType.ID = try req.getId()
+extension CrudSiblingsControllerProtocol {
+    func index(_ req: Request) async throws -> Response {
+        let parentId = try req.getId(modelType: ParentType.self)
+        let childId = try req.getId(modelType: ChildType.self)
 
-        return ParentType.find(parentId, on: req).unwrap(or: Abort(.notFound)).flatMap { parent -> Future<ChildType> in
-
-            return try parent[keyPath: self.siblings]
-                .query(on: req)
-                .filter(\ChildType.fluentID == childId)
-                .first()
-                .unwrap(or: Abort(.notFound))
+        guard
+            let parent = try await ParentType.find(parentId, on: req.db),
+            let child = try await parent[keyPath: self.siblings].query(on: req.db).filter(\._$id == childId).first()
+        else {
+            throw Abort(.notFound)
         }
+
+        return try await child.encodeResponse(status: .ok, for: req)
     }
 
-    func indexAll(_ req: Request) throws -> Future<[ChildType]> {
-        let parentId: ParentType.ID = try req.getId()
+    func indexAll(_ req: Request) async throws -> Response {
+        let parentId = try req.getId(modelType: ParentType.self)
 
-        return ParentType.find(parentId, on: req).unwrap(or: Abort(.notFound)).flatMap { parent -> Future<[ChildType]> in
-            let siblingsRelation = parent[keyPath: self.siblings]
-            return try siblingsRelation
-                .query(on: req)
-                .all()
+        guard let parent = try await ParentType.find(parentId, on: req.db) else {
+            throw Abort(.notFound)
         }
+
+        let siblings = try await parent[keyPath: self.siblings].query(on: req.db).all()
+        return try await siblings.encodeResponse(status: .ok, for: req)
     }
 
-    func update(_ req: Request) throws -> Future<ChildType> {
-        let parentId: ParentType.ID = try req.getId()
-        let childId: ChildType.ID = try req.getId()
+    func create(_ req: Request) async throws -> Response {
+        let parentId = try req.getId(modelType: ParentType.self)
 
-        return ParentType
-            .find(parentId, on: req)
-            .unwrap(or: Abort(.notFound))
-            .flatMap { parent -> Future<ChildType> in
-                return try parent[keyPath: self.siblings]
-                    .query(on: req)
-                    .filter(\ChildType.fluentID == childId)
-                    .first()
-                    .unwrap(or: Abort(.notFound))
-            }.flatMap { oldChild in
-                return try req.content.decode(ChildType.self).flatMap { newChild in
-                    var temp = newChild
-                    temp.fluentID = oldChild.fluentID
-                    return temp.update(on: req)
-                }
+        guard let parent = try await ParentType.find(parentId, on: req.db) else {
+            throw Abort(.notFound)
         }
-    }
-}
 
-public extension CrudSiblingsControllerProtocol where ThroughType.Left == ParentType,
-ThroughType.Right == ChildType {
-    func create(_ req: Request) throws -> Future<ChildType> {
-        let parentId: ParentType.ID = try req.getId()
-
-        return ParentType.find(parentId, on: req).unwrap(or: Abort(.notFound)).flatMap { parent -> Future<ChildType> in
-
-            return try req.content.decode(ChildType.self).flatMap { child in
-                let relation = parent[keyPath: self.siblings]
-                return relation.attach(child, on: req).transform(to: child)
-            }
-        }
+        let newChild = try req.content.decode(ChildType.self)
+        try await parent[keyPath: self.siblings].attach(newChild, on: req.db)
+        return try await newChild.encodeResponse(status: .created, for: req)
     }
 
-    func delete(_ req: Request) throws -> Future<HTTPStatus> {
-        let parentId: ParentType.ID = try req.getId()
-        let childId: ChildType.ID = try req.getId()
+    func update(_ req: Request) async throws -> Response {
+        let parentId = try req.getId(modelType: ParentType.self)
+        let childId = try req.getId(modelType: ChildType.self)
 
-        return ParentType
-            .find(parentId, on: req)
-            .unwrap(or: Abort(.notFound))
-            .flatMap { parent -> Future<HTTPStatus> in
-                let siblingsRelation = parent[keyPath: self.siblings]
-                return try siblingsRelation
-                    .query(on: req)
-                    .filter(\ChildType.fluentID == childId)
-                    .first()
-                    .unwrap(or: Abort(.notFound))
-                    .flatMap { siblingsRelation.detach($0, on: req).transform(to: $0) }
-                    .delete(on: req)
-                    .transform(to: HTTPStatus.ok)
+        guard
+            let parent = try await ParentType.find(parentId, on: req.db),
+            try await parent[keyPath: self.siblings].query(on: req.db).filter(\._$id == childId).first() != nil
+        else {
+            throw Abort(.notFound)
         }
-    }
-}
 
-public extension CrudSiblingsControllerProtocol where ThroughType.Right == ParentType,
-ThroughType.Left == ChildType {
-    func create(_ req: Request) throws -> Future<ChildType> {
-        let parentId: ParentType.ID = try req.getId()
-
-        return ParentType.find(parentId, on: req).unwrap(or: Abort(.notFound)).flatMap { parent -> Future<ChildType> in
-
-            return try req.content.decode(ChildType.self).flatMap { child in
-                return child.create(on: req)
-                }.flatMap { child in
-                    let relation = parent[keyPath: self.siblings]
-                    return relation.attach(child, on: req).transform(to: child)
-            }
-        }
+        let newChild = try req.content.decode(ChildType.self)
+        let temp = newChild
+        temp._$id.exists = true
+        temp.id = childId
+        try await temp.update(on: req.db)
+        return try await temp.encodeResponse(status: .ok, for: req)
     }
 
-    func delete(_ req: Request) throws -> Future<HTTPStatus> {
-        let parentId: ParentType.ID = try req.getId()
-        let childId: ChildType.ID = try req.getId()
+    func delete(_ req: Request) async throws -> Response {
+        let parentId = try req.getId(modelType: ParentType.self)
 
-        return ParentType
-            .find(parentId, on: req)
-            .unwrap(or: Abort(.notFound))
-            .flatMap { parent -> Future<HTTPStatus> in
-                let siblingsRelation = parent[keyPath: self.siblings]
-                return try siblingsRelation
-                    .query(on: req)
-                    .filter(\ChildType.fluentID == childId)
-                    .first()
-                    .unwrap(or: Abort(.notFound))
-                    .delete(on: req)
-                    .transform(to: HTTPStatus.ok)
+        guard let parent = try await ParentType.find(parentId, on: req.db) else {
+            throw Abort(.notFound)
         }
+
+        let siblingsRelation = parent[keyPath: self.siblings]
+
+        guard let child = try await siblingsRelation.query(on: req.db).first() else {
+            throw Abort(.notFound)
+        }
+
+        try await siblingsRelation.detach(child, on: req.db)
+        try await child.delete(on: req.db)
+        return try await HTTPStatus.noContent.encodeResponse(for: req)
     }
 }
